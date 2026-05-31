@@ -1,4 +1,4 @@
-# Linking LeetCode: Subarray Sum Equals K to LLD and System Design
+# LeetCode: Subarray Sum Equals K to LLD and System Design
 
 This document bridges the gap between the abstract algorithmic problem **"Subarray Sum Equals K" (LeetCode 560)** and practical software engineering, mapping it directly to Low-Level Design (LLD) and High-Level System Design (HLD) using Python.
 
