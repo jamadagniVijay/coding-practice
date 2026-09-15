@@ -15,6 +15,179 @@ Personal practice repository — data structures, algorithms, and design notes w
 
 ---
 
+## Python flash cards
+
+Click a type to reveal its common methods. Try to recall them first.
+
+<details>
+<summary><b>str</b> — immutable, ordered sequence of characters</summary>
+
+```python
+s = "hello world"
+
+s[0]              # 'h'          index
+s[2:5]            # 'llo'        slice
+s[::-1]           # reversed
+len(s)            # 11
+
+s.split()         # ['hello', 'world']
+"-".join(["a","b"])   # 'a-b'
+s.strip()         # trim whitespace (lstrip / rstrip)
+s.replace("l","L")
+s.find("wor")     # 6, or -1 if absent
+s.index("wor")    # 6, raises ValueError if absent
+s.count("l")      # 3
+s.startswith("he") / s.endswith("ld")
+s.upper() / s.lower() / s.title()
+s.isdigit() / s.isalpha() / s.isalnum()
+```
+
+Strings are immutable — every "change" returns a new string. Building one in a loop with `+=` is O(n²); collect into a list and `"".join(...)` instead.
+
+</details>
+
+<details>
+<summary><b>list</b> — mutable, ordered, allows duplicates</summary>
+
+```python
+a = [3, 1, 2]
+
+a.append(4)       # add one to the end          O(1)
+a.extend([5, 6])  # add many
+a.insert(0, 9)    # insert at index             O(n)
+a.pop()           # remove & return last        O(1)
+a.pop(0)          # remove & return first       O(n)
+a.remove(1)       # remove first matching value O(n)
+
+a.sort()                    # in place, returns None
+sorted(a, reverse=True)     # new list
+a.sort(key=lambda x: -x)    # custom order
+a.reverse()
+a.index(2)        # first position, ValueError if absent
+a.count(2)
+2 in a            # membership                  O(n)
+
+[x*2 for x in a if x > 1]   # comprehension
+```
+
+</details>
+
+<details>
+<summary><b>tuple</b> — immutable, ordered</summary>
+
+```python
+t = (1, 2, 3)
+
+t[0]              # index / slice like a list
+t.index(2)
+t.count(2)
+x, y, z = t       # unpacking
+```
+
+Only two methods, because it can't be modified. Use it as a `dict` key or `set` member — a `list` can't be, a `tuple` of hashables can.
+
+</details>
+
+<details>
+<summary><b>dict</b> — mutable key → value map, insertion-ordered</summary>
+
+```python
+d = {"a": 1, "b": 2}
+
+d["a"]            # KeyError if missing
+d.get("z")        # None if missing
+d.get("z", 0)     # default if missing
+d.setdefault("z", []).append(1)
+
+d["c"] = 3
+d.pop("a")        # remove & return value
+d.popitem()       # remove & return last pair
+d.update({"e": 5})
+
+d.keys() / d.values() / d.items()
+for k, v in d.items(): ...
+"a" in d          # checks KEYS                 O(1)
+```
+
+Average O(1) for lookup, insert and delete. Keys must be hashable.
+
+</details>
+
+<details>
+<summary><b>set</b> — mutable, unordered, no duplicates</summary>
+
+```python
+s = {1, 2, 3}
+
+s.add(4)
+s.discard(9)      # no error if absent
+s.remove(9)       # KeyError if absent
+s.pop()           # removes an arbitrary element
+
+a | b   a.union(b)
+a & b   a.intersection(b)
+a - b   a.difference(b)
+a ^ b   a.symmetric_difference(b)
+
+1 in s            # O(1) — this is the reason to reach for a set
+```
+
+`set()` creates an empty set; `{}` creates an empty dict.
+
+</details>
+
+<details>
+<summary><b>int / float</b> — numbers</summary>
+
+```python
+7 / 2             # 3.5   true division
+7 // 2            # 3     floor division
+-7 // 2           # -4    floors toward -infinity
+7 % 3             # 1
+divmod(7, 3)      # (2, 1)
+2 ** 10           # 1024
+abs(-5)
+round(2.675, 2)
+int("42") / float("3.14") / str(42)
+int("1010", 2)    # 10   parse binary
+bin(10) / hex(255) / oct(8)
+float('inf') / float('-inf')
+```
+
+`int` has unbounded precision — no overflow to worry about.
+
+</details>
+
+<details>
+<summary><b>collections</b> & <b>heapq</b> — the DSA workhorses</summary>
+
+```python
+from collections import deque, Counter, defaultdict
+import heapq
+
+q = deque([1, 2, 3])
+q.append(4); q.appendleft(0)      # O(1) both ends
+q.pop();     q.popleft()          # O(1) both ends
+
+c = Counter("aabbbc")             # {'b':3, 'a':2, 'c':1}
+c.most_common(2)                  # [('b',3), ('a',2)]
+
+g = defaultdict(list)
+g[1].append(2)                    # no KeyError on first touch
+
+h = [3, 1, 2]
+heapq.heapify(h)                  # min-heap, in place
+heapq.heappush(h, 0)
+heapq.heappop(h)                  # smallest
+heapq.nlargest(2, h)
+```
+
+Python only ships a min-heap. For a max-heap, push negated values.
+
+</details>
+
+---
+
 ## Layout
 
 | Path | Contents |
