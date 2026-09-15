@@ -17,157 +17,158 @@ Personal practice repository — data structures, algorithms, and design notes w
 
 ## Python flash cards
 
-Click a type to reveal its common methods. Try to recall them first.
+<div align="center">
 
+**Click any card to flip it.** Recall the methods first, then check yourself.
+
+</div>
+
+<table>
+<tr>
+<td width="50%" valign="top">
 <details>
-<summary><b>str</b> — immutable, ordered sequence of characters</summary>
-
-```python
+<summary><img src="https://img.shields.io/badge/str-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="str"><br><sub><i>immutable &middot; ordered &middot; characters</i></sub><br><sub>click to flip</sub></summary>
+<br>
+<pre>
 s = "hello world"
 
-s[0]              # 'h'          index
-s[2:5]            # 'llo'        slice
-s[::-1]           # reversed
-len(s)            # 11
-
-s.split()         # ['hello', 'world']
-"-".join(["a","b"])   # 'a-b'
-s.strip()         # trim whitespace (lstrip / rstrip)
-s.replace("l","L")
-s.find("wor")     # 6, or -1 if absent
-s.index("wor")    # 6, raises ValueError if absent
-s.count("l")      # 3
-s.startswith("he") / s.endswith("ld")
-s.upper() / s.lower() / s.title()
-s.isdigit() / s.isalpha() / s.isalnum()
-```
-
-Strings are immutable — every "change" returns a new string. Building one in a loop with `+=` is O(n²); collect into a list and `"".join(...)` instead.
-
+s[2:5]        # 'llo'   slice
+s[::-1]       # reversed
+s.split()     # ['hello','world']
+"-".join(x)   # build a string
+s.strip()     # lstrip / rstrip
+s.replace(a, b)
+s.find(t)     # -1 if absent
+s.index(t)    # raises if absent
+s.count("l")
+s.startswith / s.endswith
+s.upper / s.lower / s.title
+s.isdigit / s.isalpha / s.isalnum
+</pre>
+<b>Trap:</b> immutable. Building with <code>+=</code> in a loop is O(n&sup2;) &mdash; collect into a list and <code>join</code>.
 </details>
-
+</td>
+<td width="50%" valign="top">
 <details>
-<summary><b>list</b> — mutable, ordered, allows duplicates</summary>
-
-```python
+<summary><img src="https://img.shields.io/badge/list-2E8B57?style=for-the-badge&logo=python&logoColor=white" alt="list"><br><sub><i>mutable &middot; ordered &middot; duplicates ok</i></sub><br><sub>click to flip</sub></summary>
+<br>
+<pre>
 a = [3, 1, 2]
 
-a.append(4)       # add one to the end          O(1)
-a.extend([5, 6])  # add many
-a.insert(0, 9)    # insert at index             O(n)
-a.pop()           # remove & return last        O(1)
-a.pop(0)          # remove & return first       O(n)
-a.remove(1)       # remove first matching value O(n)
-
-a.sort()                    # in place, returns None
-sorted(a, reverse=True)     # new list
-a.sort(key=lambda x: -x)    # custom order
+a.append(4)     # end          O(1)
+a.extend([5,6])
+a.insert(0, 9)  #              O(n)
+a.pop()         # last         O(1)
+a.pop(0)        # first        O(n)
+a.remove(1)     # by value     O(n)
+a.sort()        # in place, returns None
+sorted(a, key=..., reverse=True)
 a.reverse()
-a.index(2)        # first position, ValueError if absent
-a.count(2)
-2 in a            # membership                  O(n)
-
-[x*2 for x in a if x > 1]   # comprehension
-```
-
+a.index(2) / a.count(2)
+2 in a          #              O(n)
+[x*2 for x in a if x &gt; 1]
+</pre>
+<b>Trap:</b> <code>sort()</code> returns <code>None</code>. <code>b = a.sort()</code> gives you nothing.
 </details>
-
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
 <details>
-<summary><b>tuple</b> — immutable, ordered</summary>
-
-```python
+<summary><img src="https://img.shields.io/badge/tuple-6A4C93?style=for-the-badge&logo=python&logoColor=white" alt="tuple"><br><sub><i>immutable &middot; ordered &middot; hashable</i></sub><br><sub>click to flip</sub></summary>
+<br>
+<pre>
 t = (1, 2, 3)
 
-t[0]              # index / slice like a list
+t[0]          # index / slice
 t.index(2)
 t.count(2)
-x, y, z = t       # unpacking
-```
+x, y, z = t   # unpacking
 
-Only two methods, because it can't be modified. Use it as a `dict` key or `set` member — a `list` can't be, a `tuple` of hashables can.
-
+# only two methods &mdash;
+# nothing can be modified
+</pre>
+<b>Why it matters:</b> a tuple of hashables can be a <code>dict</code> key or <code>set</code> member. A list cannot.
 </details>
-
+</td>
+<td width="50%" valign="top">
 <details>
-<summary><b>dict</b> — mutable key → value map, insertion-ordered</summary>
-
-```python
+<summary><img src="https://img.shields.io/badge/dict-E07B39?style=for-the-badge&logo=python&logoColor=white" alt="dict"><br><sub><i>key &rarr; value &middot; insertion-ordered</i></sub><br><sub>click to flip</sub></summary>
+<br>
+<pre>
 d = {"a": 1, "b": 2}
 
-d["a"]            # KeyError if missing
-d.get("z")        # None if missing
-d.get("z", 0)     # default if missing
+d["a"]              # KeyError if missing
+d.get("z")          # None if missing
+d.get("z", 0)       # default
 d.setdefault("z", []).append(1)
-
-d["c"] = 3
-d.pop("a")        # remove & return value
-d.popitem()       # remove & return last pair
+d.pop("a")
+d.popitem()         # last pair
 d.update({"e": 5})
-
 d.keys() / d.values() / d.items()
 for k, v in d.items(): ...
-"a" in d          # checks KEYS                 O(1)
-```
-
-Average O(1) for lookup, insert and delete. Keys must be hashable.
-
+"a" in d            # checks KEYS   O(1)
+</pre>
+<b>Trap:</b> <code>in</code> tests keys, never values. Keys must be hashable.
 </details>
-
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
 <details>
-<summary><b>set</b> — mutable, unordered, no duplicates</summary>
-
-```python
+<summary><img src="https://img.shields.io/badge/set-158F8F?style=for-the-badge&logo=python&logoColor=white" alt="set"><br><sub><i>unordered &middot; unique &middot; O(1) lookup</i></sub><br><sub>click to flip</sub></summary>
+<br>
+<pre>
 s = {1, 2, 3}
 
 s.add(4)
-s.discard(9)      # no error if absent
-s.remove(9)       # KeyError if absent
-s.pop()           # removes an arbitrary element
+s.discard(9)   # silent if absent
+s.remove(9)    # KeyError if absent
+s.pop()        # arbitrary element
 
 a | b   a.union(b)
-a & b   a.intersection(b)
+a &amp; b   a.intersection(b)
 a - b   a.difference(b)
 a ^ b   a.symmetric_difference(b)
 
-1 in s            # O(1) — this is the reason to reach for a set
-```
-
-`set()` creates an empty set; `{}` creates an empty dict.
-
+1 in s         #               O(1)
+</pre>
+<b>Trap:</b> <code>{}</code> is an empty dict. Use <code>set()</code> for an empty set.
 </details>
-
+</td>
+<td width="50%" valign="top">
 <details>
-<summary><b>int / float</b> — numbers</summary>
-
-```python
-7 / 2             # 3.5   true division
-7 // 2            # 3     floor division
--7 // 2           # -4    floors toward -infinity
-7 % 3             # 1
-divmod(7, 3)      # (2, 1)
-2 ** 10           # 1024
-abs(-5)
-round(2.675, 2)
+<summary><img src="https://img.shields.io/badge/int%20%2F%20float-B5314C?style=for-the-badge&logo=python&logoColor=white" alt="int / float"><br><sub><i>unbounded ints &middot; no overflow</i></sub><br><sub>click to flip</sub></summary>
+<br>
+<pre>
+7 / 2        # 3.5   true division
+7 // 2       # 3     floor
+-7 // 2      # -4    floors toward -inf
+7 % 3        # 1
+divmod(7, 3) # (2, 1)
+2 ** 10
+abs(-5) / round(2.675, 2)
 int("42") / float("3.14") / str(42)
-int("1010", 2)    # 10   parse binary
-bin(10) / hex(255) / oct(8)
+int("1010", 2)   # 10   parse binary
+bin / hex / oct
 float('inf') / float('-inf')
-```
-
-`int` has unbounded precision — no overflow to worry about.
-
+</pre>
+<b>Trap:</b> <code>//</code> floors toward negative infinity, so <code>-7 // 2</code> is <code>-4</code>, not <code>-3</code>.
 </details>
-
+</td>
+</tr>
+<tr>
+<td colspan="2" valign="top">
 <details>
-<summary><b>collections</b> & <b>heapq</b> — the DSA workhorses</summary>
-
-```python
+<summary><img src="https://img.shields.io/badge/collections%20%2B%20heapq-4A5568?style=for-the-badge&logo=python&logoColor=white" alt="collections and heapq"><br><sub><i>the DSA workhorses</i></sub><br><sub>click to flip</sub></summary>
+<br>
+<pre>
 from collections import deque, Counter, defaultdict
 import heapq
 
 q = deque([1, 2, 3])
-q.append(4); q.appendleft(0)      # O(1) both ends
-q.pop();     q.popleft()          # O(1) both ends
+q.append(4);  q.appendleft(0)     # O(1) both ends
+q.pop();      q.popleft()         # O(1) both ends
 
 c = Counter("aabbbc")             # {'b':3, 'a':2, 'c':1}
 c.most_common(2)                  # [('b',3), ('a',2)]
@@ -180,11 +181,12 @@ heapq.heapify(h)                  # min-heap, in place
 heapq.heappush(h, 0)
 heapq.heappop(h)                  # smallest
 heapq.nlargest(2, h)
-```
-
-Python only ships a min-heap. For a max-heap, push negated values.
-
+</pre>
+<b>Trap:</b> Python ships only a min-heap. For a max-heap, push negated values.
 </details>
+</td>
+</tr>
+</table>
 
 ---
 
