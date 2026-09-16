@@ -44,6 +44,7 @@ Deep copy vs Shallow copy
 	Change to deep copy from shallow copy -> 
 		obj2 = Object.assign({},obj1), json.parse + json.stringify
 */
+//==========================
 //get the first non repeating character
 const str = "swiss"
 let repeatingChar = new Map()
@@ -68,9 +69,10 @@ for (let i = 0;i<arr.length;i++){
 } 
 console.log(dupRemoved)
 //==========================
+// divide the array into chunks 
 arr = [1,2,3,4,5]
 size = 2
-// divide the array into chunks 
+
 let size = 2;
 
 function chunkArray(arr, siz){
@@ -81,3 +83,24 @@ function chunkArray(arr, siz){
     return temp;
 }
 console.log(chunkArray(array,size))
+//==========================
+//Flatten the array
+function flattenArray(arr) {
+  let result = [];
+
+  for (let i = 0; i < arr.length; i++) {
+    if (Array.isArray(arr[i])) {
+      // Recursively flatten the sub-array and merge it into the result
+      result = result.concat(flattenArray(arr[i]));
+    } else {
+      // Push the primitive value directly
+      result.push(arr[i]);
+    }
+  }
+
+  return result;
+}
+
+// Example usage:
+const nested = [1, [2, [3, 4], 5], 6];
+console.log(flattenArray(nested)); 
