@@ -43,6 +43,10 @@ Deep copy vs Shallow copy
 	Deep copy -> Refers to a different memory area
 	Change to deep copy from shallow copy -> 
 		obj2 = Object.assign({},obj1), json.parse + json.stringify
+
+Controlled vs Uncontrolled component
+If a state controls an input that input becomes controlled component
+If the input is controlled by react is called uncontrolled component
 */
 //==========================
 //get the first non repeating character
