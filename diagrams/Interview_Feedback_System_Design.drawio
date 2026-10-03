@@ -1,0 +1,13 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="DAG" id="f497PXfVIiGRyRa88zbP">
+    <mxGraphModel dx="1288" dy="778" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="InNB_a3ZEofmuLEvMGXW-1" parent="1" style="text;whiteSpace=wrap;html=1;fontColor=default;labelBackgroundColor=none;" value="&lt;span style=&quot;font-family: source-serif-pro, Georgia, Cambria, &amp;quot;Times New Roman&amp;quot;, Times, serif; font-size: 20px; font-style: italic; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: -0.06px; orphans: 2; text-align: start; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: normal; text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial; float: none; display: inline !important;&quot;&gt;A DAG (Directed Acyclic Graph) is the core concept of Airflow, collecting Tasks together, organized with dependencies and relationships to say how they should run.&lt;span&gt;&amp;nbsp;&lt;br&gt;&lt;/span&gt;&lt;span style=&quot;font-style: normal; letter-spacing: -0.06px;&quot;&gt;&lt;br&gt;&lt;/span&gt;&lt;/span&gt;&lt;div&gt;&lt;span style=&quot;font-family: source-serif-pro, Georgia, Cambria, &amp;quot;Times New Roman&amp;quot;, Times, serif; font-size: 20px; font-style: italic; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: -0.06px; orphans: 2; text-align: start; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: normal; text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial; float: none; display: inline !important;&quot;&gt;&lt;span style=&quot;font-style: normal; letter-spacing: -0.06px;&quot;&gt;We treat data pipelines as DAGs, which means that each DAG will have a set of tasks that will be responsible for extracting, loading, and transforming data from different sources. There are several ways of declaring an Apache Airflow DAG, but the most common is by writing a Python file that will be responsible for creating the tasks and setting their dependencies.&lt;/span&gt;&lt;span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="590" width="820" x="10" y="20" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
