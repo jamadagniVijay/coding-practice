@@ -7,10 +7,6 @@ tags:
 - Artificial Intelligence
 - Software Development
 - Coding
-published: '2026-09-18'
-free: true
-freedium_url: https://freedium-mirror.cfd/https://medium.com/@coding_with_tech/ai-system-design-interview-questions-and-answers-for-senior-engineers-6c0747bcd435
-source_url: https://medium.com/@coding_with_tech/ai-system-design-interview-questions-and-answers-for-senior-engineers-6c0747bcd435
 ---
 
 # AI System Design Interview Questions and Answers for Senior Engineers
