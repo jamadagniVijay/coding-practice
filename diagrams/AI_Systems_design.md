@@ -56,4 +56,28 @@ Routing can consider task complexity, latency requirements, customer tier, conte
 The important part is measuring whether routing actually preserves quality.
 
 Saving 60% on inference is not a success if task accuracy collapses.
+
 ==================================
+
+How would you control LLM costs?
+Start by understanding where tokens are being consumed.
+
+A request may include:
+
+
+System prompt      1,500 tokens
+Conversation       4,000 tokens
+Retrieved docs     8,000 tokens
+User question        100 tokens
+Output             1,500 tokens
+Sending 13,600 input tokens for every question can become expensive at scale.
+
+Useful optimizations include better retrieval, smaller context, prompt caching where supported, conversation summarization, model routing, output limits, and avoiding unnecessary repeated context.
+
+Cost should be observable per feature, customer, model, and request type.
+
+==================================
+
+
+==================================
+
