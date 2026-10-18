@@ -1,0 +1,13 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Page-1" id="h-KR_lOyxt3frImuK4Cu">
+    <mxGraphModel dx="1030" dy="622" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="E1KYVXUJjZF0ZPXHAqSM-1" parent="1" style="text;whiteSpace=wrap;" value="CARDS&#xa;Clarity &#xa;Alignment&#xa;Resillience&#xa;Domain Integrity&#xa;Seperation&#xa;&#xa;Core Designer&#xa;System Designer&#xa;Master Designer&#xa;&#x9;Architectural &amp; System Design&#xa;&#x9;• Build or buy&#xa;&#x9;• Synchronous or asynchronous&#xa;&#x9;• Consistent or available (The CAP Theorem trade-off)&#xa;&#x9;• Choreography or orchestration&#xa;&#x9;&#xa;&#x9;Code Quality &amp; Implementation&#xa;&#x9;• Abstraction or duplication&#xa;&#x9;• Configuration or convention&#xa;&#x9;• General or specific&#xa;&#x9;• Performance or maintainability&#xa;&#x9;&#xa;&#x9;Operational &amp; Project Management&#xa;&#x9;• Stability or change&#xa;&#x9;• Isolation or integration&#xa;&#x9;• Correctness or delivery speed&#xa;&#x9;• Short-term or long-term" vertex="1">
+          <mxGeometry height="1030" width="820" x="10" y="10" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
