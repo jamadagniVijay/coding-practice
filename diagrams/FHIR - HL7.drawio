@@ -33,8 +33,8 @@
             </root>
         </mxGraphModel>
     </diagram>
-    <diagram id="RGHEiJsT-3KPwlvVbP8y" name="HL7 ">
-        <mxGraphModel dx="1066" dy="820" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+    <diagram id="RGHEiJsT-3KPwlvVbP8y" name="HL7 → FHIR">
+        <mxGraphModel dx="2235" dy="1719" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
             <root>
                 <mxCell id="9IMlSXolNBSxa04BiI-x-0"/>
                 <mxCell id="9IMlSXolNBSxa04BiI-x-1" parent="9IMlSXolNBSxa04BiI-x-0"/>
