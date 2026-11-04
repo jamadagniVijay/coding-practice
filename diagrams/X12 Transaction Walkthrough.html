@@ -1,0 +1,359 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>X12 Transaction Walkthrough</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<style>
+/* Layout: a left rail of transaction stops (the revenue cycle in order), a detail panel to the
+   right that swaps on selection. Stacks to one column at phone width. */
+:root{
+  --paper:#f7f6f3;
+  --panel:#ffffff;
+  --ink:#1c1e21;
+  --ink-soft:#5a6068;
+  --rule:#ddd9d2;
+  --accent:#0b5c4e;      /* clinical green, used for the active stop + segment keys */
+  --accent-soft:#e3efec;
+  --flag:#8a4b1f;        /* annotation / callout */
+  --code-bg:#f1efe9;
+  --ok:#1f6b45;
+  --warn:#8a6d1f;
+  --bad:#9a3324;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:"Source Sans 3",system-ui,-apple-system,Segoe UI,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#15171a; --panel:#1c1f23; --ink:#e8e6e1; --ink-soft:#9aa1a9; --rule:#32373d;
+  --accent:#5fc3ab; --accent-soft:#1d2e2b; --flag:#d99a63; --code-bg:#121417;
+  --ok:#64c08c; --warn:#d4b45c; --bad:#e08073; color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --paper:#15171a; --panel:#1c1f23; --ink:#e8e6e1; --ink-soft:#9aa1a9; --rule:#32373d;
+  --accent:#5fc3ab; --accent-soft:#1d2e2b; --flag:#d99a63; --code-bg:#121417;
+  --ok:#64c08c; --warn:#d4b45c; --bad:#e08073; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:28px 56px;}
+.wrap{max-width:1180px;margin:0 auto}
+header{border-bottom:2px solid var(--ink);padding-bottom:14px;margin-bottom:8px}
+h1{font-size:1.75rem;margin:0 0 4px;letter-spacing:-.01em;text-wrap:balance}
+.sub{color:var(--ink-soft);margin:0;font-size:.95rem;max-width:62ch}
+
+/* ---- flow rail ---- */
+.flow{display:flex;gap:8px;flex-wrap:wrap;margin:22px 0 6px;align-items:stretch}
+.stop{flex:1 1 150px;min-width:0;text-align:left;cursor:pointer;background:var(--panel);
+  border:1px solid var(--rule);border-left:4px solid var(--rule);border-radius:3px;
+  padding:10px 12px;font-family:var(--sans);color:var(--ink);transition:.15s}
+.stop:hover{border-color:var(--accent)}
+.stop[aria-selected="true"]{border-left-color:var(--accent);background:var(--accent-soft)}
+.stop .code{font-family:var(--mono);font-weight:600;font-size:1.05rem;color:var(--accent);display:block}
+.stop .nm{font-size:.82rem;color:var(--ink-soft);display:block;margin-top:2px}
+.dirn{font-size:.7rem;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-soft);margin-top:6px;display:block}
+
+/* ---- detail ---- */
+.detail{background:var(--panel);border:1px solid var(--rule);border-radius:4px;padding:20px;margin-top:14px}
+.detail h2{margin:0 0 2px;font-size:1.3rem}
+.plain{font-style:italic;color:var(--flag);margin:0 0 14px;font-size:1rem}
+.meta{display:flex;gap:18px;flex-wrap:wrap;font-size:.82rem;color:var(--ink-soft);
+  border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);padding:8px 0;margin-bottom:16px}
+.meta b{color:var(--ink);font-weight:600}
+
+.seglist{display:flex;flex-direction:column;gap:0;font-family:var(--mono);font-size:.84rem;
+  background:var(--code-bg);border-radius:3px;overflow-x:auto;padding:10px 0}
+.seg{display:grid;grid-template-columns:minmax(0,1fr);gap:2px;padding:5px 14px;border-left:3px solid transparent}
+.seg:hover{background:var(--accent-soft);border-left-color:var(--accent)}
+.seg code{white-space:pre;color:var(--ink)}
+.seg .tag{color:var(--accent);font-weight:600}
+.seg .note{font-family:var(--sans);font-size:.8rem;color:var(--ink-soft);white-space:normal}
+.seg.key{background:color-mix(in srgb,var(--accent-soft) 60%,transparent)}
+
+.keypoints{margin:16px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:7px}
+.keypoints li{padding-left:16px;position:relative;font-size:.92rem}
+.keypoints li::before{content:"";position:absolute;left:0;top:.6em;width:6px;height:6px;background:var(--accent);border-radius:50%}
+.ask{margin-top:16px;border-left:3px solid var(--flag);padding:8px 0 8px 12px;font-size:.92rem}
+.ask b{color:var(--flag);display:block;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px}
+
+.codes{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.chip{font-family:var(--mono);font-size:.76rem;border:1px solid var(--rule);border-radius:12px;padding:2px 9px;background:var(--paper)}
+.chip.ok{color:var(--ok);border-color:var(--ok)}
+.chip.warn{color:var(--warn);border-color:var(--warn)}
+.chip.bad{color:var(--bad);border-color:var(--bad)}
+
+.envelope{margin-top:26px;border:1px dashed var(--rule);border-radius:4px;padding:14px 16px;background:var(--panel)}
+.envelope summary{cursor:pointer;font-weight:600;font-size:.95rem}
+.envelope pre{font-family:var(--mono);font-size:.8rem;background:var(--code-bg);padding:12px;border-radius:3px;overflow-x:auto;margin:12px 0 0}
+/* ---- chronology diagram ---- */
+.chrono{margin:22px 0 4px;border:1px solid var(--rule);border-radius:4px;background:var(--panel);padding:18px}
+.chrono h2{margin:0 0 2px;font-size:1.1rem}
+.ch-sub{margin:0 0 16px;font-size:.88rem;color:var(--ink-soft);max-width:68ch}
+.phase{border-left:2px solid var(--rule);padding:0 0 18px 16px;position:relative}
+.phase:last-child{padding-bottom:0}
+.phase::before{content:"";position:absolute;left:-6px;top:4px;width:10px;height:10px;border-radius:50%;background:var(--accent)}
+.ph-name{font-size:.7rem;text-transform:uppercase;letter-spacing:.09em;color:var(--ink-soft);margin-bottom:8px}
+.row{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:6px}
+.node{font-family:var(--mono);font-size:.88rem;font-weight:600;border:1px solid var(--accent);color:var(--accent);
+  background:var(--accent-soft);border-radius:3px;padding:3px 10px;white-space:nowrap}
+.node.plainbox{border-color:var(--rule);color:var(--ink-soft);background:var(--paper);font-family:var(--sans);font-weight:400;font-size:.82rem}
+.node.ackbox{border-color:var(--flag);color:var(--flag);background:transparent;font-size:.8rem}
+.arrow{color:var(--ink-soft);font-family:var(--mono);font-size:1rem}
+.branch{display:flex;align-items:center;gap:8px;margin:0 0 6px 14px;font-size:.78rem;color:var(--ink-soft)}
+.branch .el{font-family:var(--mono);color:var(--flag)}
+.loopnote{font-size:.8rem;color:var(--ink-soft);font-style:italic;margin-top:4px}
+.corrector{margin-top:16px;border-left:3px solid var(--flag);padding:8px 0 8px 12px;font-size:.88rem}
+.corrector b{color:var(--flag)}
+footer{margin-top:30px;font-size:.85rem;color:var(--ink-soft);border-top:1px solid var(--rule);padding-top:12px}
+@media (max-width:620px){.stop{flex:1 1 100%}}
+</style>
+
+<div class="wrap">
+<header>
+  <h1>X12 Transaction Walkthrough</h1>
+  <p class="sub">The revenue cycle in order, from eligibility check to payment posting. Select a transaction to see annotated segments. Hover a line for what it does.</p>
+</header>
+
+<section class="chrono">
+  <h2>Chronological order</h2>
+  <p class="ch-sub">Two transactions per exchange: a request and its response. Acknowledgements are not a stage in the chain — they fire after <em>every</em> inbound file, at a layer below the business transaction.</p>
+
+  <div class="phase">
+    <div class="ph-name">1 · Before the visit — eligibility</div>
+    <div class="row">
+      <span class="node">270</span><span class="arrow">→</span>
+      <span class="node plainbox">payer adjudicates eligibility</span><span class="arrow">→</span>
+      <span class="node">271</span>
+    </div>
+    <div class="branch"><span class="el">└─</span><span class="node ackbox">TA1 / 999</span> fires on the 270 file before any eligibility logic runs</div>
+    <div class="loopnote">No 271 inside the timeout window = the no-response case. Not a denial.</div>
+  </div>
+
+  <div class="phase">
+    <div class="ph-name">2 · The encounter</div>
+    <div class="row">
+      <span class="node plainbox">patient seen · services coded · charges captured</span>
+    </div>
+    <div class="loopnote">No X12 here. This is where the clinical system lives.</div>
+  </div>
+
+  <div class="phase">
+    <div class="ph-name">3 · Billing — claim out</div>
+    <div class="row">
+      <span class="node">837</span><span class="arrow">→</span>
+      <span class="node plainbox">front-end edits</span><span class="arrow">→</span>
+      <span class="node plainbox">adjudication (days–weeks)</span>
+    </div>
+    <div class="branch"><span class="el">└─</span><span class="node ackbox">TA1 / 999</span> within minutes — syntax only, says nothing about payment</div>
+  </div>
+
+  <div class="phase">
+    <div class="ph-name">4 · Payment</div>
+    <div class="row">
+      <span class="node">835</span><span class="arrow">→</span>
+      <span class="node plainbox">cash posted · write-offs applied · patient billed</span>
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="ph-name">5 · Only if step 4 never arrives</div>
+    <div class="row">
+      <span class="node">276</span><span class="arrow">→</span>
+      <span class="node">277</span><span class="arrow">⟲</span>
+      <span class="node plainbox">back to waiting, or resubmit a corrected 837</span>
+    </div>
+    <div class="loopnote">A conditional loop, not a step everyone passes through. Heavy 276 volume usually means the 835 posting pipeline is broken.</div>
+  </div>
+
+  <div class="corrector"><b>The correction worth making out loud:</b> 999/TA1 isn't the last step — it's a layer, not a stage. Every file you send gets one back before the business transaction is even attempted. Describing it as a final acknowledgement is the giveaway that someone has read the spec but never operated the pipeline.</div>
+</section>
+
+<div class="flow" role="tablist" id="rail"></div>
+<div class="detail" id="detail" role="tabpanel"></div>
+
+<details class="envelope">
+  <summary>The envelope every transaction rides in</summary>
+  <pre>ISA*00*          *00*          *ZZ*SUBMITTERID    *ZZ*PAYERID        *261104*1337*^*00501*000000001*0*P*:~
+GS*HS*SUBMITTERID*PAYERID*20261104*1337*1*X*005010X279A1~
+  ST*270*0001*005010X279A1~
+      ... business segments ...
+  SE*12*0001~
+GE*1*1~
+IEA*1*000000001~</pre>
+  <ul class="keypoints">
+    <li><b>ISA / IEA</b> — interchange envelope. Addressing between trading partners. A TA1 acknowledges <em>this</em> layer.</li>
+    <li><b>GS / GE</b> — functional group. Groups transactions of one type; carries the implementation guide version (005010X279A1). A 999 acknowledges this layer.</li>
+    <li><b>ST / SE</b> — the transaction set itself. SE carries a segment count used as a self-check.</li>
+    <li>Delimiters are declared in ISA, not fixed: <code>*</code> element, <code>~</code> segment, <code>:</code> component. Parsers that hardcode them break on the first partner who differs.</li>
+  </ul>
+</details>
+
+<footer>Samples are illustrative and simplified — real payer companion guides add required segments and payer-specific rules on top of the X12 standard.</footer>
+</div>
+
+<script>
+const TX = [
+  {
+    id:"270", name:"Eligibility Inquiry", dir:"Provider → Payer", guide:"005010X279A1",
+    plain:"Is this patient covered, and for what?",
+    when:"Before or at the point of service. The front end of eligibility processing.",
+    segs:[
+      ["BHT*0022*13*TRACK12345*20261104*1337~","Beginning of hierarchical transaction. 13 = request."],
+      ["HL*1**20*1~","Hierarchy level 1: information source (the payer)."],
+      ["NM1*PR*2*AETNA*****PI*60054~","PR = payer. PI qualifier + payer ID 60054."],
+      ["HL*2*1*21*1~","Level 2: information receiver (the provider), child of level 1."],
+      ["NM1*1P*2*CITY CLINIC*****XX*1234567893~","1P = provider. XX = NPI."],
+      ["HL*3*2*22*0~","Level 3: subscriber. Trailing 0 = no dependent levels below."],
+      ["TRN*1*TRACK12345*9SUBMITTER~","Trace number. Your correlation key — the 271 echoes it back.",1],
+      ["NM1*IL*1*KUMAR*VIJAY****MI*W123456789~","IL = insured. MI = member ID from the card."],
+      ["DMG*D8*19850614*M~","Demographics: DOB (D8 = CCYYMMDD format), gender."],
+      ["DTP*291*D8*20261104~","Date qualifier 291 = plan date / date of service."],
+      ["EQ*30~","Service type requested. 30 = health benefit plan coverage (general).",1]
+    ],
+    points:[
+      "The HL loop is a tree, not a flat list — source → receiver → subscriber → dependent. Parsers that ignore the hierarchy break on dependent inquiries.",
+      "TRN is the only reliable way to match a 271 back to its 270. A 270 with no matching 271 inside the timeout is your <em>no-response</em> case.",
+      "EQ*30 asks the broad question. Specific service types (e.g. 35 dental, 88 pharmacy) narrow the response and reduce payload."
+    ],
+    ask:"Explain how you correlate an inquiry to its response, and what you do when no response ever arrives."
+  },
+  {
+    id:"271", name:"Eligibility Response", dir:"Payer → Provider", guide:"005010X279A1",
+    plain:"Yes — active PPO, $1500 deductible, $40 copay.",
+    when:"Seconds to minutes after the 270. Drives whether the visit proceeds and what you collect at the desk.",
+    segs:[
+      ["TRN*2*TRACK12345*9SUBMITTER~","Echoes the inquiry trace number. 2 = referenced trace.",1],
+      ["NM1*IL*1*KUMAR*VIJAY****MI*W123456789~","Subscriber as the payer has them on file — may differ from what you sent."],
+      ["EB*1**30**PPO GOLD~","EB01=1 → Active Coverage. Plan name in EB05.",1],
+      ["EB*C**30***23*1500*****Y~","EB01=C → Deductible. $1500. Final Y = in-network."],
+      ["EB*B**98***27*40~","EB01=B → Copay. $40. Service type 98 = professional visit."],
+      ["EB*A**30***26*20~","EB01=A → Coinsurance, 20%."],
+      ["DTP*346*D8*20260101~","Plan begin date."],
+      ["AAA*Y**72*C~","Rejection: 72 = invalid/missing subscriber ID. C = please correct and resubmit.",1]
+    ],
+    points:[
+      "<b>EB01 is the whole transaction.</b> 1 = active, 6 = inactive, C = deductible, B = copay, A = coinsurance, I = non-covered.",
+      "Multiple EB segments stack — one per benefit. You're not reading a single answer, you're assembling a benefit picture.",
+      "AAA means the inquiry itself failed — bad member ID, payer unavailable, patient not found. That is a <em>different failure class</em> from inactive coverage, and must not be presented to staff as 'not covered'.",
+      "Follow-up action codes on AAA matter: C = correct and resubmit, N = do not resubmit, R = resubmit original."
+    ],
+    ask:"Distinguish three outcomes: active coverage, inactive coverage, and an inquiry that failed. They need different downstream handling."
+  },
+  {
+    id:"837", name:"Claim Submission", dir:"Provider → Payer", guide:"005010X222A1",
+    plain:"Here's what we did for the patient. Please pay.",
+    when:"After the encounter is coded and charges are captured.",
+    segs:[
+      ["CLM*CLAIM001*450***11:B:1*Y*A*Y*Y~","Claim ID, $450 total. 11 = office place of service.",1],
+      ["HI*ABK:E119~","Principal diagnosis. ABK = ICD-10-CM. E11.9 = type 2 diabetes w/o complications."],
+      ["NM1*85*2*CITY CLINIC*****XX*1234567893~","85 = billing provider, NPI."],
+      ["SBR*P*18*******CI~","Subscriber relationship. P = primary, 18 = self, CI = commercial."],
+      ["LX*1~","Service line counter."],
+      ["SV1*HC:99213*150*UN*1***1~","HC = CPT/HCPCS. 99213 office visit, $150, 1 unit.",1],
+      ["DTP*472*D8*20261101~","472 = service date for this line."],
+      ["SV1*HC:85025*80*UN*1***1~","Second line: CBC lab panel, $80."]
+    ],
+    points:[
+      "<b>Flavours:</b> 837P professional (clinic), 837I institutional (hospital, uses revenue codes), 837D dental.",
+      "The claim is hierarchical: billing provider → subscriber → patient → claim → service lines (LX/SV1 repeat).",
+      "CLM05 is a composite of place-of-service, facility code qualifier, and claim frequency — frequency 7 means a replacement claim, 8 a void.",
+      "Most front-end rejections are structural (missing NPI, invalid diagnosis pointer), caught before adjudication ever runs."
+    ],
+    ask:"Know that claims reject at two different stages — front-end edits vs adjudication — and that they return through different transactions."
+  },
+  {
+    id:"835", name:"Remittance Advice", dir:"Payer → Provider", guide:"005010X221A1",
+    plain:"We paid $380 of the $450. Here's why the rest went away.",
+    when:"On the payer's payment cycle. Auto-posting these is one of the biggest ROI wins in RCM.",
+    segs:[
+      ["BPR*I*380*C*ACH*CCP*01*999988880*DA*98765*20261115~","Payment order. $380 via ACH, effective 2026-11-15.",1],
+      ["TRN*1*CHKREF90210*1123456789~","Reassociation trace — ties the 835 to the actual bank deposit.",1],
+      ["CLP*CLAIM001*1*450*380*20*12*PAYERREF9*11~","Claim payment: status 1 = processed as primary. Billed 450, paid 380, patient resp 20.",1],
+      ["CAS*CO*45*50~","Adjustment: CO = contractual obligation, reason 45 = over fee schedule, $50. Write-off.",1],
+      ["CAS*PR*2*20~","PR = patient responsibility, reason 2 = coinsurance, $20. Bill the patient."],
+      ["SVC*HC:99213*150*130~","Line-level: billed 150, paid 130."],
+      ["PLB*1234567893*20261231*WO:CLAIM777*-75~","Provider-level adjustment — a prior overpayment recouped from this check."]
+    ],
+    points:[
+      "<b>CAS group codes decide who eats the money.</b> CO = contractual write-off, PR = bill the patient, PI = payer initiated, OA = other. Misposting CO as PR means wrongly billing patients.",
+      "The TRN reassociation number is how you match the 835 to the deposit in your bank feed. Without it, cash posting is manual.",
+      "PLB adjustments sit <em>outside</em> any single claim, so the check total won't equal the sum of CLP amounts. This is the classic balancing bug.",
+      "Balance check: sum(CLP paid) + PLB = BPR amount. Enforce it before posting."
+    ],
+    ask:"Name the balancing rule and the PLB trap. It shows you've actually posted remits rather than read about them."
+  },
+  {
+    id:"276/277", name:"Claim Status", dir:"Both ways", guide:"005010X212",
+    plain:"What happened to the claim I sent?",
+    when:"Days to weeks after the 837, only when no 835 has arrived. A conditional loop, not a step every claim passes through.",
+    segs:[
+      ["[276] TRN*1*STATUSREQ99~","Trace for the status request itself."],
+      ["[276] NM1*QC*1*KUMAR*VIJAY~","QC = patient."],
+      ["[276] REF*1K*CLAIM001~","1K = payer claim control number, or your own claim ID."],
+      ["[276] DTP*232*RD8*20261101-20261101~","Service date range (RD8 = range format)."],
+      ["[277] STC*F1:65*20261110*WQ*450*380~","Status: F1 = finalized/payment. $450 billed, $380 paid.",1],
+      ["[277] STC*A3:21*20261110*U*450~","A3 = returned as unprocessable. 21 = missing/invalid info."]
+    ],
+    points:[
+      "STC01 is a composite: <code>category:status</code>. A = acknowledged, P = pending, F = finalized, E = error.",
+      "This is the polling path. Heavy 276 traffic usually signals a broken 835 posting pipeline, not genuinely missing claims.",
+      "Payers rate-limit 276s. Batch and schedule them; don't poll per-claim on a timer.",
+      "An A3 response loops you back to a corrected 837 — not to another 276."
+    ],
+    ask:"Why would a system send many 276s? Usually because something upstream isn't reconciling."
+  },
+  {
+    id:"999 / TA1", name:"Acknowledgements", dir:"Response to every file", guide:"005010X231A1",
+    plain:"Did the file even parse?",
+    when:"Minutes after EVERY submission — the 270 and the 837 both get one. A layer beneath the business transaction, not a stage in the chain.",
+    segs:[
+      ["[TA1] TA1*000000001*261104*1337*R*024~","Interchange ack. R = rejected, 024 = invalid interchange content.",1],
+      ["[999] AK1*HC*1*005010X222A1~","Functional group being acknowledged."],
+      ["[999] AK2*837*0001*005010X222A1~","The specific transaction set within the group."],
+      ["[999] IK3*NM1*8**8~","Segment NM1 at position 8, error 8 = segment has data element errors."],
+      ["[999] IK4*9*67*1~","Element 9 (NPI), error 1 = mandatory element missing."],
+      ["[999] IK5*R*5~","Transaction set rejected."],
+      ["[999] AK9*R*1*1*0~","Group rejected: 1 included, 1 received, 0 accepted.",1]
+    ],
+    points:[
+      "<b>Three layers, three failure classes.</b> TA1 = envelope unreadable. 999 = syntax/structure bad. Business response (271/277/835) = content processed.",
+      "A 999 accepting your file says nothing about whether the claim will be paid. It only says the file parsed.",
+      "The dangerous case is <em>no acknowledgement at all</em> — not rejection. That means the file may or may not have arrived, and resubmitting risks duplicates.",
+      "Track expected-ack timers per submission. An unacked file after the SLA window is an operational alert, not a silent success."
+    ],
+    ask:"This is the differentiator question. Most candidates only discuss the business transaction. Talk about the ack chain and the no-ack case and you sound like someone who has run this in production."
+  }
+];
+
+const rail = document.getElementById('rail');
+const detail = document.getElementById('detail');
+
+TX.forEach((t,i)=>{
+  const b=document.createElement('button');
+  b.className='stop'; b.type='button'; b.setAttribute('role','tab');
+  b.setAttribute('aria-selected', i===0?'true':'false');
+  b.innerHTML=`<span class="code">${t.id}</span><span class="nm">${t.name}</span><span class="dirn">${t.dir}</span>`;
+  b.onclick=()=>select(i);
+  rail.appendChild(b);
+});
+
+function select(i){
+  const t=TX[i];
+  [...rail.children].forEach((c,j)=>c.setAttribute('aria-selected', j===i?'true':'false'));
+  const segs=t.segs.map(s=>{
+    const tag=s[0].match(/^(\[[^\]]+\]\s*)?([A-Z0-9]+)/);
+    const lbl=tag?tag[0]:'';
+    const rest=s[0].slice(lbl.length);
+    return `<div class="seg${s[2]?' key':''}"><code><span class="tag">${lbl}</span>${rest.replace(/</g,'&lt;')}</code><span class="note">${s[1]}</span></div>`;
+  }).join('');
+  detail.innerHTML=`
+    <h2>${t.id} — ${t.name}</h2>
+    <p class="plain">“${t.plain}”</p>
+    <div class="meta"><span><b>Direction</b> ${t.dir}</span><span><b>Guide</b> ${t.guide}</span><span><b>When</b> ${t.when}</span></div>
+    <div class="seglist">${segs}</div>
+    <ul class="keypoints">${t.points.map(p=>`<li>${p}</li>`).join('')}</ul>
+    <div class="ask"><b>What to say out loud</b>${t.ask}</div>`;
+}
+select(0);
+</script>
+
+</body></html>
