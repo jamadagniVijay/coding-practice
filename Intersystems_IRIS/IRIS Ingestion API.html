@@ -1,0 +1,946 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>IRIS Ingestion API</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: dense utility panel with method pills and collapsible endpoints */
+:root {
+  --bg: #fafbfc;
+  --fg: #1b1f24;
+  --surface: #ffffff;
+  --surface-alt: #f3f5f7;
+  --border: #d4d9e0;
+  --border-light: #e8ecf0;
+  --caption: #5d6572;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-soft: #eff4ff;
+  --get: #16a34a;
+  --get-bg: #f0fdf4;
+  --get-border: #bbf7d0;
+  --post: #2563eb;
+  --post-bg: #eff6ff;
+  --post-border: #bfdbfe;
+  --delete: #dc2626;
+  --error: #dc2626;
+  --error-bg: #fef2f2;
+  --success: #16a34a;
+  --success-bg: #f0fdf4;
+  --code-bg: #1e293b;
+  --code-fg: #e2e8f0;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Consolas', monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1117;
+    --fg: #e0e4ea;
+    --surface: #181c25;
+    --surface-alt: #1e2330;
+    --border: #2d3344;
+    --border-light: #252b3a;
+    --caption: #8b92a3;
+    --accent: #60a5fa;
+    --accent-hover: #93bbfd;
+    --accent-soft: #1a2744;
+    --get: #4ade80;
+    --get-bg: #0c2a1a;
+    --get-border: #166534;
+    --post: #60a5fa;
+    --post-bg: #162544;
+    --post-border: #1e40af;
+    --delete: #f87171;
+    --error: #f87171;
+    --error-bg: #2a1010;
+    --success: #4ade80;
+    --success-bg: #0c2a1a;
+    --code-bg: #0d1117;
+    --code-fg: #c9d1d9;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1117;
+  --fg: #e0e4ea;
+  --surface: #181c25;
+  --surface-alt: #1e2330;
+  --border: #2d3344;
+  --border-light: #252b3a;
+  --caption: #8b92a3;
+  --accent: #60a5fa;
+  --accent-hover: #93bbfd;
+  --accent-soft: #1a2744;
+  --get: #4ade80;
+  --get-bg: #0c2a1a;
+  --get-border: #166534;
+  --post: #60a5fa;
+  --post-bg: #162544;
+  --post-border: #1e40af;
+  --delete: #f87171;
+  --error: #f87171;
+  --error-bg: #2a1010;
+  --success: #4ade80;
+  --success-bg: #0c2a1a;
+  --code-bg: #0d1117;
+  --code-fg: #c9d1d9;
+  color-scheme: dark;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0;
+}
+
+.wrapper {
+  max-width: 960px;
+  margin: 0 auto;
+  padding-block: 2rem 4rem;
+}
+
+.header {
+  margin-bottom: 2rem;
+}
+
+.header h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 0.25rem;
+  text-wrap: balance;
+}
+
+.header .version {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--accent);
+  color: #fff;
+  padding: 0.15rem 0.5rem;
+  border-radius: 3px;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
+
+.header p {
+  color: var(--caption);
+  font-size: 0.9rem;
+  margin: 0.5rem 0 0;
+  max-width: 65ch;
+}
+
+.base-url {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.base-url label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--caption);
+}
+
+.base-url input {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  background: var(--surface);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.35rem 0.6rem;
+  min-width: 280px;
+  flex: 1;
+  max-width: 400px;
+}
+
+.section-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--caption);
+  margin: 2rem 0 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.endpoint {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-bottom: 0.75rem;
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.endpoint-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 1rem;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+}
+
+.endpoint-header:hover {
+  background: var(--surface-alt);
+}
+
+.method-badge {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 0.2rem 0.55rem;
+  border-radius: 3px;
+  flex-shrink: 0;
+  min-width: 3.2rem;
+  text-align: center;
+}
+
+.method-badge.get {
+  background: var(--get-bg);
+  color: var(--get);
+  border: 1px solid var(--get-border);
+}
+
+.method-badge.post {
+  background: var(--post-bg);
+  color: var(--post);
+  border: 1px solid var(--post-border);
+}
+
+.endpoint-path {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 500;
+  flex: 1;
+  min-width: 0;
+}
+
+.endpoint-path .param {
+  color: var(--accent);
+}
+
+.endpoint-summary {
+  font-size: 0.82rem;
+  color: var(--caption);
+}
+
+.endpoint-chevron {
+  flex-shrink: 0;
+  color: var(--caption);
+  transition: transform 0.2s;
+  font-size: 0.8rem;
+}
+
+.endpoint.open .endpoint-chevron {
+  transform: rotate(90deg);
+}
+
+.endpoint-body {
+  display: none;
+  border-top: 1px solid var(--border-light);
+  padding: 1rem;
+}
+
+.endpoint.open .endpoint-body {
+  display: block;
+}
+
+.endpoint-desc {
+  font-size: 0.88rem;
+  color: var(--fg);
+  margin: 0 0 1rem;
+  max-width: 65ch;
+}
+
+.params-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--caption);
+  margin: 0 0 0.5rem;
+}
+
+.param-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border-light);
+  flex-wrap: wrap;
+}
+
+.param-row:last-child { border-bottom: none; }
+
+.param-name {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 500;
+  min-width: 100px;
+}
+
+.param-name .required {
+  color: var(--error);
+  font-weight: 700;
+  margin-left: 0.2rem;
+}
+
+.param-type {
+  font-size: 0.78rem;
+  color: var(--caption);
+  min-width: 60px;
+}
+
+.param-desc {
+  font-size: 0.82rem;
+  color: var(--caption);
+  flex: 1;
+  min-width: 0;
+}
+
+.try-section {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-light);
+}
+
+.try-section h4 {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  margin: 0 0 0.75rem;
+}
+
+.try-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.try-form label {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--caption);
+}
+
+.try-form input,
+.try-form textarea {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  background: var(--surface-alt);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.4rem 0.6rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.try-form textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.try-btn {
+  align-self: flex-start;
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 600;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 0.45rem 1.2rem;
+  cursor: pointer;
+  margin-top: 0.25rem;
+  transition: background 0.15s;
+}
+
+.try-btn:hover { background: var(--accent-hover); }
+.try-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.response-panel {
+  margin-top: 0.75rem;
+  border-radius: 6px;
+  overflow: hidden;
+  font-size: 0.82rem;
+}
+
+.response-status {
+  padding: 0.4rem 0.75rem;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+}
+
+.response-status.success {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.response-status.error {
+  background: var(--error-bg);
+  color: var(--error);
+}
+
+.response-body {
+  background: var(--code-bg);
+  color: var(--code-fg);
+  padding: 0.75rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.response-section {
+  margin-top: 1rem;
+}
+
+.response-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--caption);
+  margin-bottom: 0.5rem;
+}
+
+.example-block {
+  background: var(--code-bg);
+  color: var(--code-fg);
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.schema-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  margin-top: 0.5rem;
+}
+
+.schema-table th {
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--caption);
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-alt);
+}
+
+.schema-table td {
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px solid var(--border-light);
+  vertical-align: top;
+}
+
+.schema-table td:first-child {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.curl-block {
+  margin-top: 0.75rem;
+}
+
+.curl-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--caption);
+  margin-bottom: 0.35rem;
+}
+
+.curl-code {
+  background: var(--code-bg);
+  color: var(--code-fg);
+  padding: 0.6rem 0.8rem;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  line-height: 1.4;
+  overflow-x: auto;
+  white-space: pre;
+  position: relative;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  font-family: var(--font-body);
+  font-size: 0.68rem;
+  font-weight: 500;
+  background: rgba(255,255,255,0.1);
+  color: var(--code-fg);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 3px;
+  padding: 0.2rem 0.5rem;
+  cursor: pointer;
+}
+
+.copy-btn:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+.info-box {
+  background: var(--accent-soft);
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  margin: 1.5rem 0;
+  font-size: 0.85rem;
+}
+
+.info-box strong {
+  color: var(--accent);
+}
+
+@media (max-width: 600px) {
+  .header h1 { font-size: 1.25rem; }
+  .endpoint-header { flex-wrap: wrap; gap: 0.5rem; }
+  .endpoint-summary { display: none; }
+  .base-url input { min-width: 200px; }
+  .param-row { flex-direction: column; gap: 0.25rem; }
+}
+</style>
+
+<div class="wrapper">
+  <div class="header">
+    <h1>IRIS Ingestion API <span class="version">v1.0</span></h1>
+    <p>REST API for ingesting data into InterSystems IRIS and querying stored records. This API runs parallel to the file-based ingestion pipeline.</p>
+    <div class="base-url">
+      <label>Base URL</label>
+      <input type="text" id="baseUrl" value="http://localhost:52773/api/ingestion">
+    </div>
+  </div>
+
+  <div class="info-box">
+    <strong>Authentication:</strong> This API uses unauthenticated access with the %All application role. The web application <code>/api/ingestion</code> dispatches to <code>Sample.REST.IngestionAPI</code> in the USER namespace.
+  </div>
+
+  <div class="section-title">Ingestion</div>
+
+  <!-- POST /ingest -->
+  <div class="endpoint" id="ep-ingest">
+    <div class="endpoint-header" onclick="toggleEndpoint('ep-ingest')">
+      <span class="method-badge post">POST</span>
+      <span class="endpoint-path">/ingest</span>
+      <span class="endpoint-summary">Ingest data with auto-generated filename</span>
+      <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body">
+      <p class="endpoint-desc">Accepts any content body and ingests it into the database. The system generates a filename automatically based on the current timestamp (e.g. <code>api-upload-2026-11-05_14-30-00</code>).</p>
+
+      <div class="params-title">Request Body</div>
+      <div class="param-row">
+        <span class="param-name">body<span class="required">*</span></span>
+        <span class="param-type">any</span>
+        <span class="param-desc">Raw content to ingest. Set Content-Type to match the payload (text/plain, application/json, etc.).</span>
+      </div>
+
+      <div class="response-section">
+        <div class="response-title">Response (201 Created)</div>
+        <div class="example-block">{
+  "status": "ok",
+  "message": "Data ingested successfully",
+  "filename": "api-upload-2026-11-05_14-30-00"
+}</div>
+      </div>
+
+      <div class="try-section">
+        <h4>Try it out</h4>
+        <div class="try-form">
+          <label>Content-Type</label>
+          <input type="text" id="ingest-ct" value="text/plain">
+          <label>Request Body</label>
+          <textarea id="ingest-body">Hello from the Swagger UI</textarea>
+          <button class="try-btn" onclick="tryIngest()">Execute</button>
+        </div>
+        <div id="ingest-curl" class="curl-block" hidden></div>
+        <div id="ingest-response" class="response-panel" hidden></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- POST /ingest/:filename -->
+  <div class="endpoint" id="ep-ingest-named">
+    <div class="endpoint-header" onclick="toggleEndpoint('ep-ingest-named')">
+      <span class="method-badge post">POST</span>
+      <span class="endpoint-path">/ingest/<span class="param">{filename}</span></span>
+      <span class="endpoint-summary">Ingest data with a custom filename</span>
+      <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body">
+      <p class="endpoint-desc">Accepts any content body and ingests it, using the provided filename as the record label.</p>
+
+      <div class="params-title">Path Parameters</div>
+      <div class="param-row">
+        <span class="param-name">filename<span class="required">*</span></span>
+        <span class="param-type">string</span>
+        <span class="param-desc">Custom name for the ingested record (e.g. <code>sensor-data.json</code>).</span>
+      </div>
+
+      <div class="params-title">Request Body</div>
+      <div class="param-row">
+        <span class="param-name">body<span class="required">*</span></span>
+        <span class="param-type">any</span>
+        <span class="param-desc">Raw content to ingest.</span>
+      </div>
+
+      <div class="response-section">
+        <div class="response-title">Response (201 Created)</div>
+        <div class="example-block">{
+  "status": "ok",
+  "message": "Data ingested successfully",
+  "filename": "sensor-data.json"
+}</div>
+      </div>
+
+      <div class="try-section">
+        <h4>Try it out</h4>
+        <div class="try-form">
+          <label>Filename</label>
+          <input type="text" id="named-filename" value="my-document.txt">
+          <label>Content-Type</label>
+          <input type="text" id="named-ct" value="text/plain">
+          <label>Request Body</label>
+          <textarea id="named-body">Custom named document content</textarea>
+          <button class="try-btn" onclick="tryIngestNamed()">Execute</button>
+        </div>
+        <div id="named-curl" class="curl-block" hidden></div>
+        <div id="named-response" class="response-panel" hidden></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">Records</div>
+
+  <!-- GET /records -->
+  <div class="endpoint" id="ep-records">
+    <div class="endpoint-header" onclick="toggleEndpoint('ep-records')">
+      <span class="method-badge get">GET</span>
+      <span class="endpoint-path">/records</span>
+      <span class="endpoint-summary">List all ingested records</span>
+      <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body">
+      <p class="endpoint-desc">Returns a JSON array of all ingested records, ordered by ReceivedAt descending (newest first). Does not include the full content body.</p>
+
+      <div class="response-section">
+        <div class="response-title">Response Schema</div>
+        <div class="overflow-wrap" style="overflow-x:auto">
+          <table class="schema-table">
+            <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+            <tr><td>id</td><td>integer</td><td>Unique record identifier</td></tr>
+            <tr><td>fileName</td><td>string</td><td>Name assigned during ingestion</td></tr>
+            <tr><td>contentType</td><td>string</td><td>MIME type of the ingested data</td></tr>
+            <tr><td>source</td><td>string</td><td>Pipeline that created the record</td></tr>
+            <tr><td>receivedAt</td><td>string</td><td>Timestamp (YYYY-MM-DD HH:MM:SS)</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <div class="response-section">
+        <div class="response-title">Example Response</div>
+        <div class="example-block">{
+  "records": [
+    {
+      "id": 1,
+      "fileName": "api-upload-2026-11-05_02-34-45",
+      "contentType": "text/plain",
+      "source": "REST API",
+      "receivedAt": "2026-11-05 02:34:45"
+    }
+  ]
+}</div>
+      </div>
+
+      <div class="try-section">
+        <h4>Try it out</h4>
+        <button class="try-btn" onclick="tryRecords()">Execute</button>
+        <div id="records-curl" class="curl-block" hidden></div>
+        <div id="records-response" class="response-panel" hidden></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GET /records/:id -->
+  <div class="endpoint" id="ep-record">
+    <div class="endpoint-header" onclick="toggleEndpoint('ep-record')">
+      <span class="method-badge get">GET</span>
+      <span class="endpoint-path">/records/<span class="param">{id}</span></span>
+      <span class="endpoint-summary">Get a single record with content</span>
+      <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body">
+      <p class="endpoint-desc">Returns a single record by ID, including the full content body. Returns <code>404</code> if the record does not exist.</p>
+
+      <div class="params-title">Path Parameters</div>
+      <div class="param-row">
+        <span class="param-name">id<span class="required">*</span></span>
+        <span class="param-type">integer</span>
+        <span class="param-desc">Record ID from the database.</span>
+      </div>
+
+      <div class="response-section">
+        <div class="response-title">Response Schema</div>
+        <div class="overflow-wrap" style="overflow-x:auto">
+          <table class="schema-table">
+            <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+            <tr><td>id</td><td>integer</td><td>Unique record identifier</td></tr>
+            <tr><td>fileName</td><td>string</td><td>Name assigned during ingestion</td></tr>
+            <tr><td>content</td><td>string</td><td>Full content of the ingested data</td></tr>
+            <tr><td>contentType</td><td>string</td><td>MIME type of the ingested data</td></tr>
+            <tr><td>source</td><td>string</td><td>Pipeline that created the record</td></tr>
+            <tr><td>receivedAt</td><td>string</td><td>Timestamp (YYYY-MM-DD HH:MM:SS)</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <div class="try-section">
+        <h4>Try it out</h4>
+        <div class="try-form">
+          <label>Record ID</label>
+          <input type="text" id="record-id" value="1">
+          <button class="try-btn" onclick="tryRecord()">Execute</button>
+        </div>
+        <div id="record-curl" class="curl-block" hidden></div>
+        <div id="record-response" class="response-panel" hidden></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">Status</div>
+
+  <!-- GET /status -->
+  <div class="endpoint" id="ep-status">
+    <div class="endpoint-header" onclick="toggleEndpoint('ep-status')">
+      <span class="method-badge get">GET</span>
+      <span class="endpoint-path">/status</span>
+      <span class="endpoint-summary">Get pipeline status and record count</span>
+      <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body">
+      <p class="endpoint-desc">Returns the current pipeline status and total number of ingested records.</p>
+
+      <div class="response-section">
+        <div class="response-title">Example Response</div>
+        <div class="example-block">{
+  "status": "running",
+  "totalRecords": 3
+}</div>
+      </div>
+
+      <div class="try-section">
+        <h4>Try it out</h4>
+        <button class="try-btn" onclick="tryStatus()">Execute</button>
+        <div id="status-curl" class="curl-block" hidden></div>
+        <div id="status-response" class="response-panel" hidden></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">Data Model</div>
+
+  <div class="endpoint" id="ep-schema">
+    <div class="endpoint-header" onclick="toggleEndpoint('ep-schema')">
+      <span class="method-badge" style="background:var(--surface-alt);color:var(--caption);border:1px solid var(--border);font-size:0.65rem;">SCHEMA</span>
+      <span class="endpoint-path">Sample.Entity.IngestedRecord</span>
+      <span class="endpoint-summary">Database table schema</span>
+      <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body">
+      <p class="endpoint-desc">The <code>Sample_Entity.IngestedRecord</code> SQL table stores every record ingested through the REST API pipeline.</p>
+      <div class="overflow-wrap" style="overflow-x:auto">
+        <table class="schema-table">
+          <tr><th>Column</th><th>Type</th><th>Description</th></tr>
+          <tr><td>ID</td><td>integer (PK)</td><td>Auto-generated primary key</td></tr>
+          <tr><td>FileName</td><td>varchar(256)</td><td>Original or generated filename</td></tr>
+          <tr><td>Content</td><td>varchar(max)</td><td>Full text content of the payload</td></tr>
+          <tr><td>ContentType</td><td>varchar(128)</td><td>MIME type from the HTTP request</td></tr>
+          <tr><td>Source</td><td>varchar(128)</td><td>Pipeline origin label (default: "REST API")</td></tr>
+          <tr><td>ReceivedAt</td><td>timestamp</td><td>When the data was received</td></tr>
+        </table>
+      </div>
+      <div class="response-section" style="margin-top:1rem">
+        <div class="response-title">SQL Query Example</div>
+        <div class="example-block">SELECT ID, FileName, ContentType, Source, ReceivedAt
+FROM Sample_Entity.IngestedRecord
+ORDER BY ReceivedAt DESC</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">ObjectScript Classes</div>
+
+  <div class="endpoint" id="ep-classes">
+    <div class="endpoint-header" onclick="toggleEndpoint('ep-classes')">
+      <span class="method-badge" style="background:var(--surface-alt);color:var(--caption);border:1px solid var(--border);font-size:0.65rem;">INFO</span>
+      <span class="endpoint-path">Production Components</span>
+      <span class="endpoint-summary">Classes that power the API pipeline</span>
+      <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body">
+      <div class="overflow-wrap" style="overflow-x:auto">
+        <table class="schema-table">
+          <tr><th>Class</th><th>Role</th><th>Description</th></tr>
+          <tr><td>Sample.REST.IngestionAPI</td><td>REST Dispatch</td><td>Maps HTTP routes to ObjectScript methods. Extends %CSP.REST.</td></tr>
+          <tr><td>Sample.Service.APIIngestService</td><td>Business Service</td><td>Receives input from REST dispatch, forwards to DatabaseWriter via production.</td></tr>
+          <tr><td>Sample.Operation.DatabaseWriter</td><td>Business Operation</td><td>Persists IngestionRequest messages as rows in IngestedRecord table.</td></tr>
+          <tr><td>Sample.DTO.IngestionRequest</td><td>Message</td><td>Carries filename, content stream, MIME type, and source label between components.</td></tr>
+          <tr><td>Sample.Entity.IngestedRecord</td><td>Persistent Table</td><td>SQL-accessible table that stores ingested records. Extends %Persistent.</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleEndpoint(id) {
+  document.getElementById(id).classList.toggle('open');
+}
+
+function getBase() {
+  return document.getElementById('baseUrl').value.replace(/\/+$/, '');
+}
+
+function showCurl(containerId, method, path, body, ct) {
+  var el = document.getElementById(containerId);
+  var base = getBase();
+  var cmd = 'curl';
+  if (method !== 'GET') cmd += ' -X ' + method;
+  cmd += " '" + base + path + "'";
+  if (body) {
+    cmd += " \\\n  -H 'Content-Type: " + ct + "'";
+    cmd += " \\\n  -d '" + body.replace(/'/g, "'\\''") + "'";
+  }
+  el.innerHTML = '<div class="curl-label">Curl</div><div class="curl-code" style="position:relative"><button class="copy-btn" onclick="copyText(this)">Copy</button>' + escapeHtml(cmd) + '</div>';
+  el.hidden = false;
+}
+
+function showResponse(containerId, status, body) {
+  var el = document.getElementById(containerId);
+  var cls = (status >= 200 && status < 300) ? 'success' : 'error';
+  var formatted = body;
+  try { formatted = JSON.stringify(JSON.parse(body), null, 2); } catch(e) {}
+  el.innerHTML = '<div class="response-status ' + cls + '">HTTP ' + status + '</div><div class="response-body">' + escapeHtml(formatted) + '</div>';
+  el.hidden = false;
+}
+
+function showError(containerId, msg) {
+  var el = document.getElementById(containerId);
+  el.innerHTML = '<div class="response-status error">Error</div><div class="response-body">' + escapeHtml(msg) + '</div>';
+  el.hidden = false;
+}
+
+function escapeHtml(s) {
+  var d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function copyText(btn) {
+  var code = btn.parentElement.textContent.replace('Copy', '').trim();
+  try {
+    navigator.clipboard.writeText(code).then(function() {
+      btn.textContent = 'Copied';
+      setTimeout(function() { btn.textContent = 'Copy'; }, 1500);
+    }).catch(function() {
+      selectText(btn.parentElement);
+    });
+  } catch(e) {
+    selectText(btn.parentElement);
+  }
+}
+
+function selectText(el) {
+  var range = document.createRange();
+  range.selectNodeContents(el);
+  var sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+}
+
+function tryIngest() {
+  var ct = document.getElementById('ingest-ct').value;
+  var body = document.getElementById('ingest-body').value;
+  showCurl('ingest-curl', 'POST', '/ingest', body, ct);
+  fetch(getBase() + '/ingest', {
+    method: 'POST',
+    headers: { 'Content-Type': ct },
+    body: body
+  }).then(function(r) {
+    r.text().then(function(t) { showResponse('ingest-response', r.status, t); });
+  }).catch(function(e) { showError('ingest-response', e.message); });
+}
+
+function tryIngestNamed() {
+  var fn = document.getElementById('named-filename').value;
+  var ct = document.getElementById('named-ct').value;
+  var body = document.getElementById('named-body').value;
+  showCurl('named-curl', 'POST', '/ingest/' + encodeURIComponent(fn), body, ct);
+  fetch(getBase() + '/ingest/' + encodeURIComponent(fn), {
+    method: 'POST',
+    headers: { 'Content-Type': ct },
+    body: body
+  }).then(function(r) {
+    r.text().then(function(t) { showResponse('named-response', r.status, t); });
+  }).catch(function(e) { showError('named-response', e.message); });
+}
+
+function tryRecords() {
+  showCurl('records-curl', 'GET', '/records');
+  fetch(getBase() + '/records')
+    .then(function(r) {
+      r.text().then(function(t) { showResponse('records-response', r.status, t); });
+    }).catch(function(e) { showError('records-response', e.message); });
+}
+
+function tryRecord() {
+  var id = document.getElementById('record-id').value;
+  showCurl('record-curl', 'GET', '/records/' + id);
+  fetch(getBase() + '/records/' + id)
+    .then(function(r) {
+      r.text().then(function(t) { showResponse('record-response', r.status, t); });
+    }).catch(function(e) { showError('record-response', e.message); });
+}
+
+function tryStatus() {
+  showCurl('status-curl', 'GET', '/status');
+  fetch(getBase() + '/status')
+    .then(function(r) {
+      r.text().then(function(t) { showResponse('status-response', r.status, t); });
+    }).catch(function(e) { showError('status-response', e.message); });
+}
+</script>
+
+</body></html>
