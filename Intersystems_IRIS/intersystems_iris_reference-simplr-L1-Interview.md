@@ -83,6 +83,13 @@ The `$DATA` function evaluates the structural state of a global or local variabl
 - **`10`:** The node has no data value of its own, but it has sub-nodes (it is a pointer/structural branch).
 - **`11`:** The node has both a data value and down-level sub-nodes.
 
+In InterSystems IRIS ObjectScript, $THIS is a special system variable that represents the current class context.
+
+What $THIS Returns
+
+• In instance methods: It returns an Object Reference (OREF) pointing to the current object instance (similar to this in Java/C++ or self in Python).
+• In class methods (static methods): It returns the current class name as a string.
+
 ### Depth-First Navigation with `$QUERY`
 In InterSystems IRIS and Caché ObjectScript, `$QUERY` (often abbreviated as `$Q`) is a built-in system function used to navigate globals in physical order (depth-first traversal). While it looks similar to `$ORDER`, `$QUERY` is fundamentally different because it does not just look at the next value on the same subscript level—it dives deep into child nodes and moves to completely different subscript branches automatically, always returning the full global string reference and its subscripts.
 
