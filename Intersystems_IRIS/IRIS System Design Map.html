@@ -1,0 +1,585 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>IRIS System Design Map</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: study sheet. Header with filters, then a two-column grid of concept cards. Each card: concept, IRIS match, expandable answer. */
+:root{
+  --bg:#F1F4F3; --surface:#FFFFFF; --ink:#13201E; --muted:#56655F; --line:#D3DBD8;
+  --accent:#0B6E66; --accent-soft:#DCEDEA;
+  --direct:#1D7448; --direct-soft:#E1F1E7;
+  --partial:#93590A; --partial-soft:#F7EBD6;
+  --none:#9E3434; --none-soft:#F6E1E0;
+  --code-bg:#EEF2F1;
+  --f-display:"Archivo","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1514; --surface:#151F1D; --ink:#E2EBE8; --muted:#94A49F; --line:#2A3835;
+    --accent:#52C2B5; --accent-soft:#17332F;
+    --direct:#62C691; --direct-soft:#173024;
+    --partial:#E2A64E; --partial-soft:#33280F;
+    --none:#E58080; --none-soft:#381B1B;
+    --code-bg:#1B2826; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1514; --surface:#151F1D; --ink:#E2EBE8; --muted:#94A49F; --line:#2A3835;
+  --accent:#52C2B5; --accent-soft:#17332F;
+  --direct:#62C691; --direct-soft:#173024;
+  --partial:#E2A64E; --partial-soft:#33280F;
+  --none:#E58080; --none-soft:#381B1B;
+  --code-bg:#1B2826; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55}
+.wrap{max-width:1180px;margin:0 auto;padding-block:28px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0}
+code,pre,.mono{font-family:var(--f-mono)}
+a{color:var(--accent)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* Header */
+.top{display:grid;gap:18px;margin-bottom:22px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+h1{font-size:clamp(30px,5vw,46px);font-weight:800;font-stretch:80%;letter-spacing:-.01em;line-height:1.02}
+.lede{max-width:68ch;color:var(--muted);margin:0}
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+
+/* Controls */
+.controls{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:12px;border-bottom:1px solid var(--line);margin-bottom:18px;display:grid;gap:10px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.search{flex:1 1 260px;min-width:0;display:flex}
+.search input{width:100%;min-width:0;font:inherit;padding:9px 12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink)}
+.chip{border:1px solid var(--line);background:var(--surface);padding:6px 11px;border-radius:999px;font-size:13px;cursor:pointer;white-space:nowrap}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip .ct{font-family:var(--f-mono);font-size:11px;opacity:.7;margin-left:4px}
+.sep{width:1px;height:22px;background:var(--line);margin:0 4px}
+.tool{border:1px solid var(--accent);color:var(--accent);background:transparent;padding:6px 12px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer}
+.tool[aria-pressed="true"]{background:var(--accent);color:var(--surface)}
+.progress{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);margin-left:auto}
+.bar{width:120px;height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .25s}
+.progress b{font-family:var(--f-mono);font-weight:500;color:var(--ink);font-variant-numeric:tabular-nums}
+
+/* Grid and cards */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,440px),1fr));gap:14px;align-items:start}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px 18px;display:grid;gap:10px;min-width:0;scroll-margin-top:140px}
+.card.flash{box-shadow:0 0 0 2px var(--accent)}
+.card-h{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:baseline}
+.num{font-family:var(--f-mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;min-width:2ch}
+.card h3{font-size:20px;font-weight:700;font-stretch:88%;line-height:1.15}
+.badge{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:4px;white-space:nowrap}
+.b-direct{color:var(--direct);background:var(--direct-soft)}
+.b-partial{color:var(--partial);background:var(--partial-soft)}
+.b-none{color:var(--none);background:var(--none-soft)}
+.dot{width:9px;height:9px;border-radius:2px;display:inline-block}
+.d-direct{background:var(--direct)} .d-partial{background:var(--partial)} .d-none{background:var(--none)}
+.idea{margin:0;color:var(--muted);font-size:14px}
+.map{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:baseline;padding:9px 11px;background:var(--accent-soft);border-radius:6px}
+.map .lbl{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);font-weight:500}
+.map .iris{font-weight:600;min-width:0;overflow-wrap:anywhere}
+.reveal{justify-self:start;border:1px dashed var(--accent);color:var(--accent);background:transparent;border-radius:6px;padding:8px 12px;cursor:pointer;font-weight:600;font-size:13px}
+.toggle{justify-self:start;background:none;border:0;padding:2px 0;color:var(--accent);font-weight:600;font-size:13px;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+.toggle::before{content:"+";font-family:var(--f-mono);width:1ch}
+.toggle[aria-expanded="true"]::before{content:"\2212"}
+.detail{display:grid;gap:12px;border-top:1px solid var(--line);padding-top:12px;min-width:0}
+.detail ul{margin:0;padding-left:18px;display:grid;gap:5px}
+.detail h4{margin:0 0 4px;font-family:var(--f-mono);font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:500}
+pre{margin:0;background:var(--code-bg);border-radius:6px;padding:10px 12px;font-size:12.5px;line-height:1.5;overflow-x:auto;white-space:pre}
+.say{border-left:3px solid var(--accent);padding:2px 0 2px 12px}
+.say p,.trade p,.case p,.interp p{margin:0}
+.case,.interp{background:var(--code-bg);border-radius:6px;padding:10px 12px;font-size:14px}
+.interp{border:1px dashed var(--partial);background:transparent}
+.card-f{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.check{display:inline-flex;gap:8px;align-items:center;cursor:pointer;user-select:none}
+.check input{width:16px;height:16px;accent-color:var(--accent)}
+.empty{padding:40px 0;text-align:center;color:var(--muted)}
+
+/* Notes fix + sources */
+.fix{margin-top:40px;display:grid;gap:12px}
+.fix h2,.src h2{font-size:24px;font-weight:700;font-stretch:85%}
+.fix p.sub{margin:0;color:var(--muted);max-width:68ch}
+.fix-table{overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:14px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+tr:last-child td{border-bottom:0}
+td.bad{color:var(--none)} td.good{color:var(--direct)}
+.src{margin-top:36px;display:grid;gap:10px}
+.src ol{margin:0;padding-left:20px;display:grid;gap:4px;font-size:14px;columns:1}
+.src li{overflow-wrap:anywhere}
+.foot{margin-top:28px;font-size:13px;color:var(--muted)}
+
+@media (max-width:640px){
+  .progress{margin-left:0;width:100%}
+  .sep{display:none}
+  .card{padding:14px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="eyebrow">Interview prep · 30 system design concepts · InterSystems IRIS and Caché</div>
+    <h1>IRIS System Design Map</h1>
+    <p class="lede">Each card takes one concept from the AlgoMaster list and gives the InterSystems feature that does the same job. Open a card to see how the feature works, one line to say in the interview, and the trade-off. Use Practice mode to test yourself before you read the answer.</p>
+    <div class="legend" aria-label="Match levels">
+      <span><i class="dot d-direct"></i>Direct: IRIS has a built-in feature for this.</span>
+      <span><i class="dot d-partial"></i>Partial: IRIS covers part of it. You build the rest.</span>
+      <span><i class="dot d-none"></i>No IRIS feature: use a tool outside IRIS.</span>
+    </div>
+  </header>
+
+  <div class="controls">
+    <div class="row">
+      <label class="search" for="q"><input id="q" type="search" placeholder="Search a concept or an IRIS term, for example ECP or %Stream" autocomplete="off"></label>
+      <button class="tool" id="practice" aria-pressed="false" type="button">Practice mode</button>
+      <button class="tool" id="expand" aria-pressed="false" type="button">Open all</button>
+      <button class="tool" id="random" type="button">Random card</button>
+    </div>
+    <div class="row" id="filters">
+      <div class="row" id="groups" role="group" aria-label="Filter by topic"></div>
+      <span class="sep" aria-hidden="true"></span>
+      <div class="row" id="matches" role="group" aria-label="Filter by match level"></div>
+      <div class="progress" aria-live="polite"><span>Can explain</span><span class="bar"><i id="barfill"></i></span><b id="prog">0/30</b></div>
+    </div>
+  </div>
+
+  <main class="grid" id="grid"></main>
+  <p class="empty" id="empty" hidden>No card matches. Clear the search or pick another filter.</p>
+
+  <section class="fix" aria-labelledby="fixh">
+    <h2 id="fixh">Correct these lines in your L1 notes</h2>
+    <p class="sub">These items are in your notes file. Each correction comes from InterSystems documentation or the Developer Community. Some of them connect to cards 13, 15, 19 and 30.</p>
+    <div class="fix-table">
+      <table>
+        <thead><tr><th>Topic</th><th>Your notes say</th><th>Correct</th></tr></thead>
+        <tbody>
+          <tr><td>Shared lock</td><td class="bad"><code>LOCK +^Data(1)</code></td><td class="good"><code>LOCK +^Data(1)#"S"</code>. The <code>+</code> only adds a lock without a release.</td></tr>
+          <tr><td>Simple lock</td><td class="bad"><code>LOCK ^Data(1)</code> is only an exclusive lock</td><td class="good">It is exclusive. Without <code>+</code>, it first releases all locks that the process holds.</td></tr>
+          <tr><td>Escalating lock</td><td class="bad"><code>LOCK ^Data(1)*</code></td><td class="good"><code>LOCK +^Data(1)#"E"</code></td></tr>
+          <tr><td>Lock effect</td><td class="bad">Only the holder can read or modify</td><td class="good">A lock does not stop access by itself. It works only when all processes use the same lock names.</td></tr>
+          <tr><td>Tune Table</td><td class="bad"><code>RENAME TABLE my_table</code></td><td class="good"><code>TUNE TABLE my_table</code>, or <code>$SYSTEM.SQL.Stats.Table.GatherTableStats()</code></td></tr>
+          <tr><td>$ZREFERENCE</td><td class="bad">Read-only</td><td class="good">You can SET it to <code>""</code> or to a valid global reference.</td></tr>
+          <tr><td>Embedded SQL plan</td><td class="bad">Built at compile time</td><td class="good">On IRIS 2020.1 and later, it compiles at first execution. Routine compile checks only the syntax, unless you use <code>/compileembedded=1</code>.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="src" aria-labelledby="srch">
+    <h2 id="srch">Sources</h2>
+    <ol>
+      <li><a href="https://blog.algomaster.io/p/30-system-design-concepts">AlgoMaster: System Design was HARD until I Learned these 30 Concepts</a></li>
+      <li><a href="https://www.intersystems.com/massive-scalability-intersystems-iris-technology-guide.pdf">InterSystems: Massive Scalability with InterSystems IRIS (ECP and sharding)</a></li>
+      <li><a href="https://spound.github.io/iris_offline_docs/pdfs/AFL_ecp.pdf">InterSystems First Look: Distributed Caching (ECP)</a></li>
+      <li><a href="https://community.intersystems.com/print/421471">Developer Community: ECP and Process Management API</a></li>
+      <li><a href="https://docs.intersystems.com/irislatest/csp/docbook/DocBook.UI.Page.cls?KEY=GSCALE_sharding_oview_elements">InterSystems docs: Sharding overview</a></li>
+      <li><a href="https://community.intersystems.com/node/586823">Developer Community: Sharding and Scalability, a Beginner's Guide</a></li>
+      <li><a href="https://community.intersystems.com/node/413826">Developer Community: Mirroring FAQ</a></li>
+      <li><a href="https://docs.intersystems.com/irislatest/csp/docbook/DocBook.UI.Page.cls?KEY=RACS_AsyncMemberType">InterSystems docs: AsyncMemberType</a></li>
+      <li><a href="https://community.intersystems.com/post/identify-mirror-member-status">Developer Community: Identify a mirror member status</a></li>
+      <li><a href="https://community.intersystems.com/printpdf/406571">Developer Community: Database Mirroring without a Virtual IP Address</a></li>
+      <li><a href="https://docs.intersystems.com/csp/docbook/DocBook.UI.Page.cls?KEY=GCGI">InterSystems docs: Web Gateway Guide</a></li>
+      <li><a href="https://docs.intersystems.com/irisforhealthlatest/csp/docbook/DocBook.UI.Page.cls?KEY=GREST_csprest">InterSystems docs: Creating a REST Service Manually</a></li>
+      <li><a href="https://docs.intersystems.com/irislatest/csp/docbook/Doc.View.cls?KEY=GREST_intro">InterSystems docs: Introduction to REST services (spec-first)</a></li>
+      <li><a href="https://openexchange.intersystems.com/package/GraphQL">Open Exchange: GraphQL package</a></li>
+      <li><a href="https://openexchange.intersystems.com/package/iris-graphql-demo">Open Exchange: iris-graphql-demo</a></li>
+      <li><a href="https://community.intersystems.com/node/459421">Developer Community: A Tutorial on WebSockets</a></li>
+      <li><a href="https://docs.intersystems.com/irislatest/csp/docbook/DocBook.UI.Page.cls?KEY=EMONITOR_concepts">InterSystems docs: Core concepts of interoperability productions</a></li>
+      <li><a href="https://community.intersystems.com/node/465586">Developer Community: Introducing InterSystems API Manager</a></li>
+      <li><a href="https://community.intersystems.com/print/491841">Developer Community: IAM, Zero to Hero</a></li>
+      <li><a href="https://community.intersystems.com/print/468866">Developer Community: Using IAM to Load Balance an API</a></li>
+      <li><a href="https://docs.intersystems.com/irislatest/csp/docbook/DocBook.UI.Page.cls?KEY=GOBJ_propstream_declaring">InterSystems docs: Defining Stream Properties</a></li>
+      <li><a href="https://docs.intersystems.com/services/csp/docbook/DocBook.UI.Page.cls?KEY=GSQL_blobs">InterSystems docs: Storing and Using Stream Data (BLOBs and CLOBs)</a></li>
+      <li><a href="https://community.intersystems.com/node/560616">Developer Community: Testing Columnar Storage</a></li>
+      <li><a href="https://docs.intersystems.com/irislatest/csp/docbook/DocBook.UI.Page.cls?KEY=GSQL_tables_via_classes_serialobject">InterSystems docs: Embedded Object (%SerialObject)</a></li>
+      <li><a href="https://docs.intersystems.com/csp/docbook/DocBook.UI.Page.cls?KEY=RERR_sql">InterSystems docs: SQL Error Messages</a></li>
+      <li><a href="https://docs.intersystems.com/irislatest/csp/docbook/DocBook.UI.Page.cls?KEY=GSQL_ESQL">InterSystems docs: Embedded SQL</a></li>
+      <li><a href="https://docs.intersystems.com/supplychain20241/csp/docbook/DocBook.UI.Page.cls?KEY=GSOC_adaptive">InterSystems docs: Adaptive Mode and TUNE TABLE</a></li>
+      <li><a href="https://docs.intersystems.com/irislatest/csp/docbook/DocBook.UI.Page.cls?KEY=RCOS_clock">InterSystems docs: LOCK command</a></li>
+      <li><a href="https://spound.github.io/iris_offline_docs/pdfs/ALOCK.pdf">InterSystems docs: Locking and Concurrency Control</a></li>
+      <li><a href="https://docs.intersystems.com/latest/csp/docbook/DocBook.UI.Page.cls?KEY=GCDI_journal">InterSystems docs: Journaling</a></li>
+      <li><a href="https://community.intersystems.com/post/any-other-options-iterating-entries-global-faster">Developer Community: Iterating entries in a global faster</a></li>
+    </ol>
+  </section>
+  <p class="foot">Your progress marks stay in this browser only.</p>
+</div>
+
+<script>
+const GROUPS = {net:"Networking", api:"APIs", data:"Data", scale:"Scaling", dist:"Distributed"};
+const MATCH = {direct:"Direct", partial:"Partial", none:"No IRIS feature"};
+
+const C = [
+{n:1,name:"Client-server architecture",g:"net",m:"direct",iris:"IRIS instance, Web Gateway, superserver",
+ idea:"A client sends a request. A server processes it and sends a response.",
+ how:["The IRIS instance is the server. It holds the code and the data.","Browsers and REST clients connect through a web server and the Web Gateway.","ODBC, JDBC and the Native SDKs connect to the superserver port.","With ECP, an IRIS application server is also a client of the data server."],
+ say:"Clients reach the IRIS instance through the Web Gateway for HTTP, or through the superserver for ODBC, JDBC and native calls.",
+ trade:"One instance is simple to run. It is also a single point of failure until you add a mirror."},
+
+{n:2,name:"IP address",g:"net",m:"partial",iris:"Mirror Virtual IP (VIP)",
+ idea:"Each server has an address. If the service moves to a new server, the address can change.",
+ how:["A mirror can have a Virtual IP address.","The VIP stays on the current primary. After a failover, it moves to the new primary.","Clients keep one address and reconnect to it.","The built-in VIP works only when the mirror members are on the same network subnet."],
+ say:"I give the mirror a VIP, so clients have one address that always points to the primary.",
+ trade:"The VIP is simple. Across data centres or cloud subnets, use a load balancer or DNS instead."},
+
+{n:3,name:"DNS",g:"net",m:"none",iris:"No IRIS feature. Use a DNS traffic manager.",
+ idea:"DNS maps a name to the IP address of a server.",
+ how:["IRIS has no DNS service of its own.","For a mirror without a VIP, InterSystems describes a network traffic manager that sends clients to the current primary.","Across regions, a DNS-based manager (for example Amazon Route 53 or F5 Global Traffic Manager) can point the name to a promoted DR async member."],
+ say:"IRIS does not do DNS. For a multi-site mirror, a DNS traffic manager points one name to the live primary.",
+ trade:"Clients can cache an old DNS answer. After a failover, some clients can use the old address for a time."},
+
+{n:4,name:"Proxy and reverse proxy",g:"net",m:"direct",iris:"Web server + Web Gateway; InterSystems API Manager (IAM)",
+ idea:"A reverse proxy receives client requests and forwards them to backend servers. It hides the server addresses.",
+ how:["A web server, such as Apache or IIS, receives the request first.","The Web Gateway module in that web server passes the request to an IRIS instance.","The Gateway keeps a pool of persistent connections to IRIS.","IAM can also stand in front of IRIS REST APIs as a reverse proxy."],
+ say:"The web server and the Web Gateway are the reverse proxy for IRIS. Clients do not connect to the instance directly.",
+ trade:"The Gateway adds one network hop. It also gives one place for TLS and access rules."},
+
+{n:5,name:"Latency",g:"net",m:"partial",iris:"Global buffers (database cache), ECP application servers",
+ idea:"Latency is the time for data to go from client to server and back.",
+ how:["Inside IRIS, disk reads are the main source of delay.","The database cache (global buffers) keeps recently used blocks in memory.","An ECP application server keeps its own cache near the users.","A global that does not fit in the buffers causes repeated disk reads."],
+ case:"Developer Community, July 2023: a $ORDER loop over a 47 GB global (30 million entries) took 90 minutes. A 4 GB test global (45 million entries) took 15 seconds. The experts said the test global was in the buffers and the real one was not, so blocks reloaded from disk. They also said that each $ORDER step walks the full B*-tree key, not only the first subscript.",
+ say:"To cut latency, I first check the global buffer size and the GLOSTAT figures. Then I move users closer to the data with ECP application servers.",
+ trade:"More buffer memory helps reads. It does not fix a design that scans the full global."},
+
+{n:6,name:"HTTP and HTTPS",g:"net",m:"direct",iris:"Web Gateway, SSL/TLS configurations, %Net.HttpRequest",
+ idea:"HTTP carries requests and responses. HTTPS encrypts them with TLS.",
+ how:["Inbound HTTP goes through the web server and the Web Gateway.","TLS normally ends at the web server. You can also secure the Gateway connection to IRIS.","IRIS keeps TLS settings as named SSL/TLS configurations.","Outbound calls use %Net.HttpRequest. Set its SSLConfiguration property to a configuration name."],
+ code:`set req = ##class(%Net.HttpRequest).%New()
+set req.Server = "payer.example.com"
+set req.Https = 1
+set req.SSLConfiguration = "PayerTLS"
+set sc = req.Get("/eligibility/123")`,
+ say:"Inbound HTTPS ends at the web server in front of the Web Gateway. Outbound calls use %Net.HttpRequest with a named TLS configuration.",
+ trade:"TLS costs some CPU for each new connection. Persistent connections reduce that cost."},
+
+{n:7,name:"APIs",g:"api",m:"direct",iris:"%CSP.REST, %SOAP.WebService, Native SDKs, ODBC/JDBC",
+ idea:"An API gives clients a fixed way to call the server without knowing its internals.",
+ how:["REST services extend %CSP.REST.","SOAP services extend %SOAP.WebService.","Native SDKs (Java, .NET, Python, Node.js) call globals and class methods directly.","ODBC and JDBC give SQL access to the same data."],
+ say:"One persistent class can be a REST resource, a SQL table and a global at the same time.",
+ trade:"Many access paths give flexibility. Each path needs its own security check."},
+
+{n:8,name:"REST API",g:"api",m:"direct",iris:"%CSP.REST UrlMap; %REST.Spec (OpenAPI 2.0)",
+ idea:"REST uses resources and standard HTTP methods. Each request is stateless.",
+ how:["Extend %CSP.REST and add an XData UrlMap block.","Each Route maps a URL and an HTTP method to a class method.","Spec-first: put an OpenAPI 2.0 spec in a %REST.Spec class. IRIS generates the dispatch class and updates the implementation class.","A web application points to the dispatch class."],
+ code:`XData UrlMap [ XMLNamespace = "http://www.intersystems.com/urlmap" ]
+{
+<Routes>
+  <Route Url="/claims/:id" Method="GET"  Call="GetClaim" />
+  <Route Url="/claims"     Method="POST" Call="AddClaim" />
+</Routes>
+}`,
+ say:"For a new API I use the spec-first method. The OpenAPI spec generates the dispatch class, so the contract and the code stay aligned.",
+ trade:"Spec-first keeps the contract and the code aligned. A manual UrlMap is faster for a small service."},
+
+{n:9,name:"GraphQL",g:"api",m:"none",iris:"No built-in support. Community packages only.",
+ idea:"GraphQL lets the client ask for exactly the fields it needs in one request.",
+ how:["IRIS has no built-in GraphQL server.","Open Exchange has a community GraphQL package. InterSystems does not give technical support for it.","Another option: a Python GraphQL server (Graphene with SQLAlchemy) on top of IRIS SQL."],
+ say:"IRIS does not include GraphQL. I would expose REST from %CSP.REST, or put a separate GraphQL layer over IRIS SQL.",
+ trade:"A separate GraphQL layer is one more service to run, monitor and secure."},
+
+{n:10,name:"Databases",g:"data",m:"direct",iris:"Globals in IRIS.DAT; namespaces and mappings",
+ idea:"A database stores, retrieves and manages data in a secure and durable way.",
+ how:["All data is stored in globals. A global is a sparse, multidimensional array, held as a B*-tree.","A database is a physical file (IRIS.DAT).","A namespace is a logical view. Mappings join globals and routines from several databases.","Classes, SQL tables and JSON documents are views over the same globals."],
+ say:"In IRIS every model sits on globals. The namespace decides which databases the code sees.",
+ trade:"Direct global access has the least overhead. It also skips the validation that objects and SQL do."},
+
+{n:11,name:"SQL vs NoSQL",g:"data",m:"direct",iris:"Multi-model: SQL, objects, globals, JSON, columnar",
+ idea:"SQL gives a fixed schema and ACID transactions. NoSQL gives a flexible schema and scale.",
+ how:["One %Persistent class is also a SQL table. Its data is in globals.","Globals are the key-value model.","%DynamicObject and %DynamicArray handle JSON documents.","Columnar storage (from IRIS 2022.2) suits analytic queries.","TSTART, TCOMMIT, TROLLBACK and journaling give ACID behaviour."],
+ code:`CREATE TABLE App.Visit (
+  VisitDate DATE,
+  Amount    NUMERIC(10,2),
+  Status    VARCHAR(10)
+) WITH STORAGETYPE = COLUMNAR`,
+ say:"In IRIS this is not a choice of product. I choose the access model for each use case, on the same data.",
+ trade:"Columnar storage is much faster for aggregates. In one community test, inserts were about 18% slower."},
+
+{n:12,name:"Vertical scaling",g:"scale",m:"direct",iris:"Larger server; more global buffers",
+ idea:"Scale up: add CPU, memory or storage to one server.",
+ how:["Add CPU, memory and faster disks to one instance.","Give the extra memory to the database cache (global buffers).","One server is still a single point of failure. Add a mirror for availability."],
+ say:"Scale up first, and give the memory to global buffers. It needs no code change.",
+ trade:"No code change. Hardware limits and cost rise fast."},
+
+{n:13,name:"Horizontal scaling",g:"scale",m:"direct",iris:"ECP (distributed caching)",
+ idea:"Scale out: add more servers and share the load between them.",
+ how:["One data server stores the data on disk.","Application servers run the code and keep data blocks in their own cache.","The data server keeps all caches coherent. It also manages locks for the whole cluster.","The application code does not change. ECP is transparent to it.","If the connection breaks, the application server tries to recover. After the recovery wait (1200 seconds by default), processes get <NETWORK> errors."],
+ say:"I scale user volume with ECP. Application servers take the CPU and cache load, and the data server only persists and coordinates locks.",
+ trade:"ECP scales users, not data size. All writes still go to one data server."},
+
+{n:14,name:"Load balancers",g:"scale",m:"direct",iris:"Web Gateway balancing; IAM upstreams; external balancer",
+ idea:"A load balancer sends each request to a healthy server, for example by round robin or least connections.",
+ how:["The Web Gateway can balance load and fail over between several IRIS instances.","State-aware mode (Preserve mode 1) keeps a session on one process. This is the same idea as sticky sessions.","IAM upstreams balance REST traffic across instances.","An external load balancer can poll each mirror member and send traffic only to the primary."],
+ say:"For ECP, a load balancer spreads users across application servers. For a mirror, the balancer polls the members and sends traffic only to the primary.",
+ trade:"Sticky sessions keep state simple. They make the load less even."},
+
+{n:15,name:"Database indexing",g:"data",m:"direct",iris:"Standard, bitmap, bitslice and columnar indexes; TUNE TABLE",
+ idea:"An index is a lookup structure. It finds rows without a full table scan.",
+ how:["A standard index is a global that maps a value to row IDs.","Bitmap indexes suit fields with few distinct values. They also make COUNT fast.","Bitslice indexes speed up SUM and range conditions on numbers.","After a large data load, run TUNE TABLE so the optimizer has current statistics.","In raw MUMPS code, an index is a second global that the application keeps in step."],
+ code:`Index StatusIdx On Status [ Type = bitmap ];
+
+TUNE TABLE App.Claim`,
+ case:"Same Developer Community thread as card 5: the advice was to stop the full scan. Keep a stored count, or an index or bitmap global, and read that.",
+ say:"I index the fields in WHERE and JOIN clauses, use bitmap indexes for low-cardinality fields, and run TUNE TABLE after big loads.",
+ trade:"Each index speeds up reads. It also slows down every insert, update and delete."},
+
+{n:16,name:"Replication",g:"scale",m:"direct",iris:"Mirroring: failover pair + async members",
+ idea:"Copies of the database on other servers. One primary takes writes. Replicas take reads.",
+ how:["A mirror has a primary and a backup failover member.","The primary sends journal data to the backup synchronously. It waits for acknowledgement at key points.","Async members get journal data asynchronously. They can be a few records behind.","Async member types: disaster recovery (DR), read-only reporting, read-write reporting.","A reporting async is the IRIS read replica."],
+ code:`write $SYSTEM.Mirror.IsPrimary()
+write $SYSTEM.Mirror.GetMemberType()`,
+ say:"The failover pair gives HA. A reporting async takes the read and report load. A DR async in another region gives disaster recovery.",
+ trade:"Reporting asyncs remove read load from the primary. Their data can be slightly old."},
+
+{n:17,name:"Sharding",g:"scale",m:"direct",iris:"InterSystems IRIS SQL sharding",
+ idea:"Split the data by a key into shards on several servers.",
+ how:["A sharded cluster has several data nodes. Each node holds one shard of each sharded table.","The shard key is the RowID by default. You can define your own key.","Tables with the same key (co-sharding) join locally on each node.","Queries run in parallel on all nodes, and IRIS merges the results.","You can mirror each data node for high availability.","Sharding needs an Enterprise licence. Community Edition does not support it."],
+ code:`CREATE TABLE App.Claim (
+  ClaimId   INT,
+  PatientId INT,
+  Amount    NUMERIC(10,2),
+  SHARD KEY (PatientId)
+)`,
+ say:"ECP scales users. Sharding scales data volume. I pick a shard key that lets the big tables join on the same node.",
+ trade:"Sharding scales data size and analytic queries. A bad shard key sends most of the work to one node."},
+
+{n:18,name:"Vertical partitioning",g:"data",m:"partial",iris:"Separate subscripts or globals; columnar storage; streams",
+ idea:"Split a wide table by columns into smaller tables.",
+ how:["In globals, put each group of fields under its own subscript or in its own global.","A read then touches only the nodes it needs.","Columnar storage keeps each column separately.","Large fields can go into stream properties. IRIS stores stream data in a separate global."],
+ code:`^Pat(42)             = "Rao^Vijay^1987-05-02"
+^Pat(42,"Ins")       = "PayerA^GRP77^MEM901"
+^Pat(42,"LastLogin") = "2026-11-08 09:14"`,
+ say:"In globals I partition by subscript. Hot fields and cold fields live in different nodes.",
+ trade:"Each read moves fewer bytes. A full record needs more global reads."},
+
+{n:19,name:"Caching",g:"scale",m:"partial",iris:"Global buffers, ECP cache, cached queries, process-private globals",
+ idea:"Keep frequently used data in memory. A TTL removes old entries.",
+ how:["IRIS keeps database blocks in global buffers automatically.","ECP application servers keep their own coherent block cache.","SQL cached queries keep compiled query plans. On IRIS 2020.1 and later, Embedded SQL compiles at first execution.","For temporary data, use process-private globals (^||name) or IRISTEMP. They are not journaled.","Globals have no expiry setting. For TTL, store a timestamp with the value and check it on read."],
+ code:`set ^Cache("elig",memberId) = $listbuild(result, $zdatetime($horolog,3))`,
+ say:"Most of the time IRIS is its own cache. I add an application cache only for computed results, and I store a timestamp so the entries expire.",
+ trade:"An application cache is fast. You must invalidate it when the source data changes."},
+
+{n:20,name:"Denormalization",g:"data",m:"direct",iris:"Global trees, %SerialObject, parent-child relationships",
+ idea:"Combine related data in one place to remove joins. Some data is duplicated.",
+ how:["One global can hold an order and its lines in one tree.","A %SerialObject property is embedded in the parent row. No join is needed.","A parent-child relationship stores child rows under the parent's global.","MUMPS applications often copy a value into several globals. The application must update every copy."],
+ code:`^Order(1001)            = "2026-11-08^P42"
+^Order(1001,"Line",1)   = "CPT99213^1^120.00"
+^Order(1001,"Line",2)   = "CPT85025^1^35.00"`,
+ say:"Globals are denormalized by design. A parent and its children sit in one tree, so a read needs no join.",
+ trade:"Reads are fast. Every update must change every copy, or the data drifts."},
+
+{n:21,name:"CAP theorem",g:"dist",m:"partial",iris:"Mirror and ECP behaviour",
+ idea:"During a network partition, a distributed system must choose consistency or availability.",
+ interp:"InterSystems does not describe its products with CAP labels. The lines below state the documented behaviour. The CAP label after each line is an interpretation.",
+ how:["Failover members: the backup takes over automatically only if it can confirm that it has the latest journal data. If not, it waits for manual action. (Favours consistency.)","Async members can be a few journal records behind. (Reads from them are eventually consistent.)","ECP: during a network break, the application server waits for recovery. After the wait, processes get <NETWORK> errors. (Favours consistency.)"],
+ say:"The failover pair chooses consistency. The backup does not take over if it cannot prove that it has the latest journal. Async members give eventual consistency.",
+ trade:"A CP choice can stop service during a partition. An AP read from an async can return slightly old data."},
+
+{n:22,name:"Blob storage",g:"data",m:"direct",iris:"%Stream classes; SQL BLOB/CLOB",
+ idea:"Store large unstructured files, such as images, video and PDF documents.",
+ how:["IRIS strings have a size limit of about 3.6 MB. Use streams for larger data.","%Stream.GlobalBinary stores binary data in the database.","%Stream.FileBinary stores it as an operating-system file.","SQL BLOB and CLOB fields hold up to 4 GB.","A large FHIR Binary resource, for example a PDF, needs stream storage."],
+ code:`Property CardImage As %Stream.GlobalBinary;
+Property ScanFile  As %Stream.FileBinary(LOCATION = "/data/scans");`,
+ say:"For card images and PDF files I use %Stream properties. Global streams stay inside the database. File streams keep it small.",
+ trade:"Global streams are part of the database, so backup, journaling and mirroring include them. File streams keep the database smaller, but need their own backup."},
+
+{n:23,name:"CDN",g:"scale",m:"none",iris:"No IRIS feature",
+ idea:"A CDN keeps static content on edge servers near the users.",
+ how:["IRIS has no CDN.","Put the CDN in front of the web server for static files (JavaScript, CSS, images).","The web server can serve static files itself. Only application requests need to go through the Web Gateway to IRIS."],
+ say:"IRIS does not have a CDN. I keep static files on the web server or a CDN, and send only application calls to IRIS.",
+ trade:"Cached files can be old after a release. Use versioned file names."},
+
+{n:24,name:"WebSockets",g:"api",m:"direct",iris:"%CSP.WebSocket",
+ idea:"One persistent connection. The server can push data to the client at any time.",
+ how:["Extend %CSP.WebSocket. The client opens ws:// or wss:// to the class URL.","OnPreServer() runs before the connection opens. Server() reads and writes messages.","SharedConnection = 1: asynchronous. Clients share a pool of connections between the Web Gateway and IRIS.","SharedConnection = 0: synchronous. Each client has a private channel."],
+ code:`Class App.Notify Extends %CSP.WebSocket
+{
+Method OnPreServer() As %Status
+{
+  set ..SharedConnection = 1
+  quit $$$OK
+}
+}`,
+ say:"For push updates, I extend %CSP.WebSocket and set SharedConnection to 1, so many clients share a pool of Gateway connections.",
+ trade:"Synchronous mode is simple. Asynchronous mode shares connections, so it serves more clients."},
+
+{n:25,name:"Webhooks",g:"api",m:"direct",iris:"REST route or business service (in); %Net.HttpRequest or business operation (out)",
+ idea:"A server sends an HTTP request to another server when an event occurs.",
+ how:["To receive: add a POST route in a %CSP.REST class, or use a business service such as EnsLib.REST.Service.","Reply quickly. Put the work on a production queue and do it later.","To send: call %Net.HttpRequest, or use a business operation with an HTTP outbound adapter.","Check the caller with a shared secret or a signature. Use HTTPS."],
+ say:"An inbound webhook is a POST route. I reply quickly and queue the work in a production, so a slow step does not make the sender retry.",
+ trade:"Webhooks remove polling. The sender can deliver the same event twice, so the receiver must be idempotent (card 30)."},
+
+{n:26,name:"Microservices",g:"dist",m:"partial",iris:"Namespaces, web applications, productions, containers, IAM",
+ idea:"Split one large application into small services. Each service deploys and scales alone.",
+ how:["Many IRIS systems are large MUMPS monoliths.","Separate namespaces and web applications give each service its own code, data and access rules.","An interoperability production splits work into business services, processes and operations.","IRIS runs in containers, so each service can have its own instance.","IAM gives one gateway in front of the services."],
+ say:"I move from a monolith step by step: a REST layer first, then separate namespaces, then separate instances where the load needs it.",
+ trade:"Separate services deploy alone. Each extra instance adds licence, monitoring and network cost."},
+
+{n:27,name:"Message queues",g:"dist",m:"direct",iris:"Interoperability productions",
+ idea:"A producer puts a message in a queue. A consumer takes it when it is ready.",
+ how:["Business hosts send request and response messages to each other.","An asynchronous message waits in a queue (^Ens.Queue) until the target host is free.","The message warehouse stores every message. Visual trace shows the full path.","Pool size sets how many jobs process a host's queue in parallel.","A business operation can defer a response and send it later."],
+ say:"A production is the IRIS message queue. Each message is persisted and traceable, and pool size controls the parallel work.",
+ trade:"Stored messages give audit and replay. The message store grows, so it needs a purge schedule."},
+
+{n:28,name:"Rate limiting",g:"dist",m:"partial",iris:"IAM Rate Limiting plugin; Web Gateway connection limit",
+ idea:"Limit how many requests each client can send in a time window.",
+ how:["IAM has Rate Limiting plugins. Over the limit, the client gets HTTP 429.","The Web Gateway setting Maximum Server Connections limits connections to one instance. This limits concurrency, not request rate.","In ObjectScript, a fixed window is simple: $INCREMENT a counter global for each client and each minute."],
+ code:`set win = $piece($horolog,",",1)_"-"_($piece($horolog,",",2)\\60)
+set n = $increment(^RateLimit(clientId,win))
+if n > 100 { set %response.Status = "429 Too Many Requests"  quit }`,
+ say:"I put rate limits in IAM. Inside IRIS, a $INCREMENT counter for each client and minute gives a fixed window without a lock.",
+ trade:"A fixed window allows bursts at the window edge. A token bucket is smoother but keeps more state."},
+
+{n:29,name:"API gateway",g:"dist",m:"direct",iris:"InterSystems API Manager (IAM)",
+ idea:"One entry point for all clients. It handles authentication, rate limits, logging and routing.",
+ how:["IAM is based on Kong Enterprise.","You define services, routes and plugins, in the portal or by REST calls.","Plugins add authentication, rate limiting, logging and load balancing.","IAM gets its licence key from the IRIS instance.","A developer portal publishes the API documentation."],
+ say:"IAM is the InterSystems API gateway. It is Kong underneath, so services, routes and plugins work the same way.",
+ trade:"One gateway gives one place for security. It is also one more component that must be highly available."},
+
+{n:30,name:"Idempotency",g:"dist",m:"partial",iris:"Unique index, LOCK, idempotent SET",
+ idea:"A repeated request gives the same result as one request.",
+ how:["SET ^X(key) = value is idempotent. Run it twice and the result is the same.","$INCREMENT and appends are not idempotent. A retry adds a second entry.","Store each request ID under a unique index. A duplicate INSERT fails with SQLCODE -119.","In globals: LOCK the request ID, check $DATA, then do the work and set the result in one transaction.","LOCK works only when every writer uses the same lock name."],
+ code:`lock +^Req(id):5  if '$test quit "busy"
+if $data(^Req(id)) { lock -^Req(id)  quit ^Req(id) }
+tstart
+// ... process the request ...
+set ^Req(id) = result
+tcommit
+lock -^Req(id)`,
+ say:"I key every request by a request ID. A unique index or a lock-and-$DATA check stops a retry from posting twice.",
+ trade:"The ID store costs one extra write for each request. It must be purged after the retry window."}
+];
+
+/* State */
+const KEY = "iris-design-map-v1";
+let known = new Set();
+try { const raw = localStorage.getItem(KEY); if (raw) known = new Set(JSON.parse(raw)); } catch(e) {}
+function save(){ try { localStorage.setItem(KEY, JSON.stringify([...known])); } catch(e) {} }
+
+let fGroup = "all", fMatch = "all", query = "", practice = false, openAll = false;
+const opened = new Set(), revealed = new Set();
+
+const grid = document.getElementById("grid");
+const el = (t, cls, txt) => { const e = document.createElement(t); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+
+function buildCard(c){
+  const a = el("article","card"); a.id = "c" + c.n; a.dataset.n = c.n;
+  const h = el("div","card-h");
+  h.append(el("span","num",String(c.n).padStart(2,"0")), el("h3",null,c.name), el("span","badge b-"+c.m, MATCH[c.m]));
+  a.append(h, el("p","idea",c.idea));
+
+  const ans = el("div"); ans.className = "ans"; ans.style.display = "grid"; ans.style.gap = "10px";
+  const map = el("div","map"); map.append(el("span","lbl","IRIS"), el("span","iris",c.iris));
+  ans.append(map);
+
+  const tg = el("button","toggle","How it works, interview line, trade-off"); tg.type = "button";
+  const dId = "d" + c.n; tg.setAttribute("aria-controls", dId);
+  const d = el("div","detail"); d.id = dId;
+  if (c.interp){ const x = el("div","interp"); x.append(el("p",null,c.interp)); d.append(x); }
+  const how = el("div"); how.append(el("h4",null,"How it works in IRIS"));
+  const ul = el("ul"); c.how.forEach(t => ul.append(el("li",null,t))); how.append(ul); d.append(how);
+  if (c.code){ const p = el("pre"); p.append(el("code",null,c.code)); d.append(p); }
+  if (c.case){ const x = el("div","case"); x.append(el("h4",null,"Real case"), el("p",null,c.case)); d.append(x); }
+  const s = el("div","say"); s.append(el("h4",null,"Interview line"), el("p",null,c.say)); d.append(s);
+  const tr = el("div","trade"); tr.append(el("h4",null,"Trade-off"), el("p",null,c.trade)); d.append(tr);
+  tg.addEventListener("click", () => { opened.has(c.n) ? opened.delete(c.n) : opened.add(c.n); paint(a,c); });
+  ans.append(tg, d);
+
+  const rv = el("button","reveal","Show the IRIS answer"); rv.type = "button";
+  rv.addEventListener("click", () => { revealed.add(c.n); opened.add(c.n); paint(a,c); });
+
+  const f = el("div","card-f");
+  const lab = el("label","check"); const cb = document.createElement("input"); cb.type = "checkbox"; cb.id = "k" + c.n;
+  cb.checked = known.has(c.n);
+  cb.addEventListener("change", () => { cb.checked ? known.add(c.n) : known.delete(c.n); save(); progress(); });
+  lab.append(cb, document.createTextNode("I can explain this"));
+  f.append(lab, el("span",null,GROUPS[c.g]));
+
+  a.append(rv, ans, f);
+  a._parts = {ans, rv, tg, d};
+  return a;
+}
+
+function paint(a,c){
+  const {ans, rv, tg, d} = a._parts;
+  const hide = practice && !revealed.has(c.n);
+  ans.hidden = hide; rv.hidden = !hide;
+  const isOpen = openAll || opened.has(c.n);
+  d.hidden = !isOpen; tg.setAttribute("aria-expanded", String(isOpen));
+}
+
+const cards = C.map(c => { const a = buildCard(c); grid.append(a); return a; });
+
+function matches(c){
+  if (fGroup !== "all" && c.g !== fGroup) return false;
+  if (fMatch !== "all" && c.m !== fMatch) return false;
+  if (!query) return true;
+  const hay = [c.name,c.iris,c.idea,c.say,c.trade,c.code||"",c.case||"",...c.how].join(" ").toLowerCase();
+  return query.split(/\s+/).every(w => hay.includes(w));
+}
+
+function render(){
+  let shown = 0;
+  C.forEach((c,i) => { const ok = matches(c); cards[i].hidden = !ok; if (ok) shown++; paint(cards[i],c); });
+  document.getElementById("empty").hidden = shown > 0;
+  chips();
+}
+
+function progress(){
+  document.getElementById("prog").textContent = known.size + "/" + C.length;
+  document.getElementById("barfill").style.width = (known.size / C.length * 100) + "%";
+}
+
+/* Filter chips */
+const gBox = document.getElementById("groups"), mBox = document.getElementById("matches");
+function makeChip(box, val, label, getter, setter){
+  const b = el("button","chip"); b.type = "button"; b.dataset.v = val;
+  b.append(document.createTextNode(label), el("span","ct",""));
+  b.addEventListener("click", () => { setter(val); render(); });
+  box.append(b); return b;
+}
+const gChips = [makeChip(gBox,"all","All",null,v=>fGroup=v), ...Object.entries(GROUPS).map(([k,v]) => makeChip(gBox,k,v,null,x=>fGroup=x))];
+const mChips = [makeChip(mBox,"all","Any match",null,v=>fMatch=v), ...Object.entries(MATCH).map(([k,v]) => makeChip(mBox,k,v,null,x=>fMatch=x))];
+function chips(){
+  gChips.forEach(b => {
+    b.setAttribute("aria-pressed", String(b.dataset.v === fGroup));
+    b.querySelector(".ct").textContent = C.filter(c => (b.dataset.v === "all" || c.g === b.dataset.v) && (fMatch === "all" || c.m === fMatch)).length;
+  });
+  mChips.forEach(b => {
+    b.setAttribute("aria-pressed", String(b.dataset.v === fMatch));
+    b.querySelector(".ct").textContent = C.filter(c => (b.dataset.v === "all" || c.m === b.dataset.v) && (fGroup === "all" || c.g === fGroup)).length;
+  });
+}
+
+/* Tools */
+document.getElementById("q").addEventListener("input", e => { query = e.target.value.trim().toLowerCase(); render(); });
+const pBtn = document.getElementById("practice");
+pBtn.addEventListener("click", () => { practice = !practice; revealed.clear(); pBtn.setAttribute("aria-pressed", String(practice)); render(); });
+const eBtn = document.getElementById("expand");
+eBtn.addEventListener("click", () => {
+  openAll = !openAll; if (!openAll) opened.clear();
+  eBtn.setAttribute("aria-pressed", String(openAll)); eBtn.textContent = openAll ? "Close all" : "Open all"; render();
+});
+document.getElementById("random").addEventListener("click", () => {
+  const vis = cards.filter(a => !a.hidden);
+  const pool = vis.filter(a => !known.has(+a.dataset.n));
+  const list = pool.length ? pool : vis; if (!list.length) return;
+  const a = list[Math.floor(Math.random() * list.length)];
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  a.scrollIntoView({behavior: reduce ? "auto" : "smooth", block: "start"});
+  cards.forEach(x => x.classList.remove("flash")); a.classList.add("flash");
+  setTimeout(() => a.classList.remove("flash"), 1600);
+});
+
+render(); progress();
+</script>
+
+</body></html>
