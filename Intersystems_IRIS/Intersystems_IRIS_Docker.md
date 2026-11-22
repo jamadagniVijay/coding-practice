@@ -1,5 +1,12 @@
 # IRIS commands 
 ```
+docker run --name my-iris -d `
+  --publish 9091:1972 `
+  --publish 9092:52773 `
+  --volume D:\VIJAY\code:/durable/password `
+  intersystems/iris-community:latest-cd `
+  --password-file /durable/password/password.txt
+
 start IRIS terminal
 
 $ ./bin/iris session iris
